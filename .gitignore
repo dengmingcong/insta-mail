@@ -1,0 +1,10 @@
+__pycache__/*
+*.pyc
+.python-version
+logs/*
+.idea
+.env
+.pytest_cache
+*.csv
+temp/*
+*.log
