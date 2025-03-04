@@ -7,3 +7,7 @@ class LoginPageLocators:
     USERNAME_INPUT = (By.ID, "normal_login_username")
     PASSWORD_INPUT = (By.ID, "normal_login_password")
     LOG_IN_BUTTON = (By.CSS_SELECTOR, "button.login-form-button")
+
+
+class MainPageLocators:
+    ACTIVE_TAB = (By.CSS_SELECTOR, ".el-menu-item.is-active")
