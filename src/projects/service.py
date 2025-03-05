@@ -1,5 +1,6 @@
 """Module specific business logic."""
 
+import os
 from functools import reduce
 from typing import Callable, Generator
 from urllib.parse import unquote
@@ -12,6 +13,7 @@ from selenium.webdriver.remote.webelement import WebElement
 
 from src.projects.constants import LoginPageLocators, MainPageLocators
 from src.projects.exceptions import ElementNotFoundError
+from src.utils import load_env
 
 
 class BasePage(object):
@@ -130,8 +132,8 @@ def auth(
     driver: ChromeWebDriver,
     username: str,
     password: str,
-    wait_processor: Callable = wait_until_main_page_loaded,
-    *cookies: str,
+    wait_processor: Callable,
+    *cookies_to_read: str,
 ) -> Generator[tuple]:
     """Authenticate and return token info.
 
@@ -139,7 +141,7 @@ def auth(
     :param username: Username.
     :param password: Password.
     :param wait_processor: Wait until some condition is met, e.g. page is loaded.
-    :param cookies: Cookies to read.
+    :param cookies_to_read: Cookies to read.
     :return: Generator of cookie and value.
     """
     # Authenticate.
@@ -159,7 +161,35 @@ def auth(
         )
 
     # read cookie
-    for cookie in cookies:
+    for cookie in cookies_to_read:
         yield cookie, unquote(driver.get_cookie(cookie)["value"])
 
     logger.success("Successfully authenticated.")
+
+
+def auth_ops() -> dict[str, str]:
+    """Authenticate to ops and return token info.
+
+    Dotenv file should exist in the root directory and contain the following keys:
+    - OPS_URL
+    - OPS_USERNAME
+    - OPS_PASSWORD
+
+    :return: Dictionary of token info, e.g. {"userId": "123", "token": "token"}
+    """
+    load_env()
+
+    # Initialize Chrome WebDriver.
+    driver = init_chrome_driver(os.getenv("OPS_URL"))
+
+    # Authenticate.
+    dict(
+        auth(
+            driver,
+            os.getenv("OPS_USERNAME"),
+            os.getenv("OPS_PASSWORD"),
+            wait_until_main_page_loaded,
+            "userId",
+            "token",
+        )
+    )
