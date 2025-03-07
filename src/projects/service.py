@@ -12,7 +12,7 @@ from selenium.common import NoSuchElementException
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from selenium.webdriver.remote.webelement import WebElement
 
-from src.projects.constants import LoginPageLocators, MainPageLocators
+from src.projects.constants import LoginPageLocators, MainPageLocators, VesyncService
 from src.projects.exceptions import ElementNotFoundError
 from src.utils import load_env
 
@@ -180,7 +180,7 @@ def auth_ops() -> dict[str, str]:
     load_env()
 
     # Initialize Chrome WebDriver.
-    driver = init_chrome_driver(os.getenv("OPS_URL"))
+    driver = init_chrome_driver(VesyncService.OPS_URL)
 
     # Authenticate.
     return dict(
