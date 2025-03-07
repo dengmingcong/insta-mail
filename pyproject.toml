@@ -10,6 +10,7 @@ python = "^3.12"
 fastapi = {extras = ["standard"], version = "^0.115.8"}
 selenium = "^4.29.0"
 loguru = "^0.7.3"
+pytest = "^8.3.5"
 
 
 [build-system]
