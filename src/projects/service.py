@@ -134,7 +134,7 @@ def auth(
     password: str,
     wait_processor: Callable,
     *cookies_to_read: str,
-) -> Generator[tuple]:
+) -> Generator[tuple, None, None]:
     """Authenticate and return token info.
 
     :param driver: ChromeWebDriver instance.
