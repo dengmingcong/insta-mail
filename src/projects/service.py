@@ -181,7 +181,7 @@ def auth_ops() -> dict[str, str]:
     driver = init_chrome_driver(os.getenv("OPS_URL"))
 
     # Authenticate.
-    dict(
+    return dict(
         auth(
             driver,
             os.getenv("OPS_USERNAME"),
