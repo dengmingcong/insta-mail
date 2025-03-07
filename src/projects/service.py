@@ -164,8 +164,6 @@ def auth(
     for cookie in cookies_to_read:
         yield cookie, unquote(driver.get_cookie(cookie)["value"])
 
-    logger.success("Successfully authenticated.")
-
 
 def auth_ops() -> dict[str, str]:
     """Authenticate to ops and return token info.
