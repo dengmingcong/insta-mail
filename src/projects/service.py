@@ -1,5 +1,6 @@
 """Module specific business logic."""
 
+import functools
 import os
 from functools import reduce
 from typing import Callable, Generator
@@ -165,6 +166,7 @@ def auth(
         yield cookie, unquote(driver.get_cookie(cookie)["value"])
 
 
+@functools.cache
 def auth_ops() -> dict[str, str]:
     """Authenticate to ops and return token info.
 
