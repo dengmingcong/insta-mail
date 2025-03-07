@@ -11,3 +11,23 @@ class LoginPageLocators:
 
 class MainPageLocators:
     ACTIVE_TAB = (By.CSS_SELECTOR, ".el-menu-item.is-active")
+
+
+class VesyncService:
+    """VeSync service constants."""
+
+    OPS_URL: str = "https://ops.vesync.co"
+    PM_URL: str = (
+        "https://pmapi.vesync.co/platform/admin/pmProject/v2/pageProjectSummaryV2"
+    )
+    API_CONTEXT: dict = {
+        "osInfo": "MacIntel",
+        "clientInfo": "pc",
+        "clientType": "pc",
+        "clientVersion": "Chrome 133",
+        "timeZone": "Asia/Shanghai",
+        "terminalId": "PM",
+        "acceptLanguage": "en",
+        "method": "pageProjectSummaryV2",
+        "bizSystemId": "9f9c3543-631e-4d22-8ee8-9a58bb9845b1",
+    }
