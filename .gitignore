@@ -8,3 +8,4 @@ logs/*
 *.csv
 temp/*
 *.log
+.vscode/*
