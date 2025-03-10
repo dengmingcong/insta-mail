@@ -16,10 +16,8 @@ class MainPageLocators:
 class VesyncService:
     """VeSync service constants."""
 
-    OPS_URL: str = "https://ops.vesync.co"
-    PM_URL: str = (
-        "https://pmapi.vesync.co/platform/admin/pmProject/v2/pageProjectSummaryV2"
-    )
+    PM_ORIGIN: str = "https://ops.vesync.co"
+    API_PATH: str = "/platform/admin/pmProject/v2/pageProjectSummaryV2"
     API_CONTEXT: dict = {
         "osInfo": "MacIntel",
         "clientInfo": "pc",
