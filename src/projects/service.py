@@ -167,27 +167,26 @@ def auth(
 
 
 @functools.cache
-def auth_ops() -> dict[str, str]:
-    """Authenticate to ops and return token info.
+def auth_pm() -> dict[str, str]:
+    """Authenticate to pm.vesync.co and return token info.
 
     Dotenv file should exist in the root directory and contain the following keys:
-    - OPS_URL
-    - OPS_USERNAME
-    - OPS_PASSWORD
+    - IT_USERNAME
+    - IT_PASSWORD
 
     :return: Dictionary of token info, e.g. {"userId": "123", "token": "token"}
     """
     load_env()
 
     # Initialize Chrome WebDriver.
-    driver = init_chrome_driver(VesyncService.OPS_URL)
+    driver = init_chrome_driver(VesyncService.PM_ORIGIN)
 
     # Authenticate.
     return dict(
         auth(
             driver,
-            os.getenv("OPS_USERNAME"),
-            os.getenv("OPS_PASSWORD"),
+            os.getenv("IT_USERNAME"),
+            os.getenv("IT_PASSWORD"),
             wait_until_main_page_loaded,
             "userId",
             "token",
