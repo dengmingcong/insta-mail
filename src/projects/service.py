@@ -154,7 +154,7 @@ def auth(
     try:
         # Wait until page is loaded.
         wait_processor(driver)
-        logger.success("Log in successfully.")
+        logger.success("Logged into pm successfully.")
     except Exception as e:
         logger.error(
             f"Failed to enter main page after logging in, "
