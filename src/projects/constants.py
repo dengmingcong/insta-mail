@@ -16,7 +16,8 @@ class MainPageLocators:
 class VesyncService:
     """VeSync service constants."""
 
-    PM_ORIGIN: str = "https://ops.vesync.co"
+    PM_FRONTEND_ORIGIN: str = "https://ops.vesync.co"
+    PM_API_ORIGIN: str = "https://pmapi.vesync.co"
     API_PATH: str = "/platform/admin/pmProject/v2/pageProjectSummaryV2"
     API_CONTEXT: dict = {
         "osInfo": "MacIntel",
@@ -28,4 +29,5 @@ class VesyncService:
         "acceptLanguage": "en",
         "method": "pageProjectSummaryV2",
         "bizSystemId": "9f9c3543-631e-4d22-8ee8-9a58bb9845b1",
+        "debugMode": True,
     }
