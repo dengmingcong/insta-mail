@@ -179,7 +179,7 @@ def auth_pm() -> dict[str, str]:
     load_env()
 
     # Initialize Chrome WebDriver.
-    driver = init_chrome_driver(VesyncService.PM_ORIGIN)
+    driver = init_chrome_driver(VesyncService.PM_FRONTEND_ORIGIN)
 
     # Authenticate.
     return dict(
