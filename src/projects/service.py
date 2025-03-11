@@ -14,7 +14,10 @@ from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from selenium.webdriver.remote.webelement import WebElement
 
 from src.projects.constants import LoginPageLocators, MainPageLocators, VesyncService
-from src.projects.exceptions import ElementNotFoundError
+from src.projects.exceptions import (
+    ElementNotFoundError,
+    TokenNotFoundInLocalStorageError,
+)
 from src.utils import load_env
 
 
@@ -160,12 +163,19 @@ def auth(
             f"possible reasons: login failed (password changed), page elements changed, exception: {e}"
         )
 
-    sleep(5)
-
     # PM is different from ops, the token info was stored in Local Storage instead of cookies.
-    token_dict = json.loads(
-        driver.execute_script("return localStorage.getItem('userLogin')")
-    )
+    # It may take some time to store the token info into Local Storage.
+    for _ in range(5):
+        token_str = driver.execute_script("return localStorage.getItem('userLogin')")
+        if token_str:
+            break
+        sleep(1)
+    else:
+        raise TokenNotFoundInLocalStorageError(
+            "Failed to get token info from Local Storage."
+        )
+
+    token_dict = json.loads(token_str)
 
     return {
         "account_id": token_dict["accountId"],
