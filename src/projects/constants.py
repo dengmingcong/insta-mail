@@ -16,7 +16,7 @@ class MainPageLocators:
 class VesyncService:
     """VeSync service constants."""
 
-    PM_FRONTEND_ORIGIN: str = "https://ops.vesync.co"
+    PM_FRONTEND_ORIGIN: str = "https://pm.vesync.co/"
     PM_API_ORIGIN: str = "https://pmapi.vesync.co"
     API_PATH: str = "/platform/admin/pmProject/v2/pageProjectSummaryV2"
     API_CONTEXT: dict = {
