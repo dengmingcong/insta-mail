@@ -1,10 +1,11 @@
 """Module specific business logic."""
 
 import functools
+import json
 import os
 from functools import reduce
-from typing import Callable, Generator
-from urllib.parse import unquote
+from time import sleep
+from typing import Callable
 
 from loguru import logger
 from selenium import webdriver
@@ -134,16 +135,14 @@ def auth(
     username: str,
     password: str,
     wait_processor: Callable,
-    *cookies_to_read: str,
-) -> Generator[tuple, None, None]:
+) -> dict:
     """Authenticate and return token info.
 
     :param driver: ChromeWebDriver instance.
     :param username: Username.
     :param password: Password.
     :param wait_processor: Wait until some condition is met, e.g. page is loaded.
-    :param cookies_to_read: Cookies to read.
-    :return: Generator of cookie and value.
+    :return: Dictionary of token info, e.g. {"account_id": "123", "token": "token"}
     """
     # Authenticate.
     login_page = LoginPage(driver)
@@ -161,9 +160,17 @@ def auth(
             f"possible reasons: login failed (password changed), page elements changed, exception: {e}"
         )
 
-    # read cookie
-    for cookie in cookies_to_read:
-        yield cookie, unquote(driver.get_cookie(cookie)["value"])
+    sleep(5)
+
+    # PM is different from ops, the token info was stored in Local Storage instead of cookies.
+    token_dict = json.loads(
+        driver.execute_script("return localStorage.getItem('userLogin')")
+    )
+
+    return {
+        "account_id": token_dict["accountId"],
+        "token": token_dict["token"],
+    }
 
 
 @functools.cache
@@ -182,13 +189,9 @@ def auth_pm() -> dict[str, str]:
     driver = init_chrome_driver(VesyncService.PM_FRONTEND_ORIGIN)
 
     # Authenticate.
-    return dict(
-        auth(
-            driver,
-            os.getenv("IT_USERNAME"),
-            os.getenv("IT_PASSWORD"),
-            wait_until_main_page_loaded,
-            "userId",
-            "token",
-        )
+    return auth(
+        driver,
+        os.getenv("IT_USERNAME"),
+        os.getenv("IT_PASSWORD"),
+        wait_until_main_page_loaded,
     )

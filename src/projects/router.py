@@ -32,7 +32,7 @@ async def read_projects(
         json={
             "context": {
                 **project_constants.VesyncService.API_CONTEXT,
-                "accountID": cookies["userId"],
+                "accountID": cookies["account_id"],
                 "token": cookies["token"],
                 "traceId": int(datetime.datetime.now().timestamp()),
             },
