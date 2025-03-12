@@ -49,6 +49,6 @@ async def read_projects(
     )
 
     return [
-        PMProject(id=project["projectId"], name=project["projectFullName"])
+        PMProject(id=project["projectId"], title=project["projectFullName"])
         for project in response.json()["result"]["projectList"]
     ]
