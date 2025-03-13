@@ -28,7 +28,7 @@ async def read_projects(
 
     response = requests.post(
         project_constants.VesyncService.PM_API_ORIGIN
-        + project_constants.VesyncService.API_SEARCH_PROJECTS,
+        + project_constants.APIPath.SEARCH_PROJECTS,
         json={
             "context": {
                 **project_constants.VesyncService.API_CONTEXT,
