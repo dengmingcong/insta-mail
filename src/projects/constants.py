@@ -18,7 +18,7 @@ class VesyncService:
 
     PM_FRONTEND_ORIGIN: str = "https://pm.vesync.co/"
     PM_API_ORIGIN: str = "https://pmapi.vesync.co"
-    SEARCH_PROJECTS_API_PATH: str = "/platform/admin/pmProject/v2/pageProjectSummaryV2"
+    API_SEARCH_PROJECTS: str = "/platform/admin/pmProject/v2/pageProjectSummaryV2"
     API_CONTEXT: dict = {
         "osInfo": "MacIntel",
         "clientInfo": "pc",
