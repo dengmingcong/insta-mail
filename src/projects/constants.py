@@ -36,3 +36,5 @@ class APIPath:
     """API path constants."""
 
     SEARCH_PROJECTS: str = "/platform/admin/pmProject/v2/pageProjectSummaryV2"
+    GET_PROJECT_MEMBERS: str = "/platform/admin/pmProject/v2/getRelatedProjectMember"
+    GET_PROJECT_PLANS: str = "/platform/admin/pmProject/v2/getProjectSchedule"
