@@ -3,8 +3,8 @@
 from pydantic import BaseModel
 
 
-class PMProject(BaseModel):
-    """Pydantic model for PM project."""
+class PMProjectLocator(BaseModel):
+    """Pydantic model for locating a PM project."""
 
     id: int
     title: str

@@ -7,7 +7,7 @@ from fastapi import APIRouter
 
 from src.projects import constants as project_constants
 from src.projects import service as project_service
-from src.projects.schemas import PMProject
+from src.projects.schemas import PMProjectLocator
 
 router = APIRouter(
     tags=["projects"],
@@ -17,7 +17,7 @@ router = APIRouter(
 @router.get("/projects")
 async def read_projects(
     title_like: str, page_number: int = 1, page_size: int = 50
-) -> list[PMProject]:
+) -> list[PMProjectLocator]:
     """Query projects by matching the title.
 
     :param title_like: Title to match.
@@ -49,6 +49,6 @@ async def read_projects(
     )
 
     return [
-        PMProject(id=project["projectId"], title=project["projectFullName"])
+        PMProjectLocator(id=project["projectId"], title=project["projectFullName"])
         for project in response.json()["result"]["projectList"]
     ]
