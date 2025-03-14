@@ -86,4 +86,5 @@ async def read_project(project_id: int) -> PMProject:
         cloud_developers=get_role_members(raw_members, "云开发"),
         web_developers=get_role_members(raw_members, "web前端开发"),
         app_developers=get_role_members(raw_members, "app开发"),
+        ui_testers=get_role_members(raw_members, "系统测试"),
     )

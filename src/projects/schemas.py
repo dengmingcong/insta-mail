@@ -17,3 +17,4 @@ class PMProject(BaseModel):
     cloud_developers: list[str]
     web_developers: list[str]
     app_developers: list[str]
+    ui_testers: list[str]
