@@ -501,6 +501,17 @@ MarkupSafe = ">=2.0"
 i18n = ["Babel (>=2.7)"]
 
 [[package]]
+name = "jmespath"
+version = "1.0.1"
+description = "JSON Matching Expressions"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "jmespath-1.0.1-py3-none-any.whl", hash = "sha256:02e2e4cc71b5bcab88332eebf907519190dd9e6e82107fa7f83b1003a6252980"},
+    {file = "jmespath-1.0.1.tar.gz", hash = "sha256:90261b206d6defd58fdd5e85f478bf633a2901798906be2ad389150c5c60edbe"},
+]
+
+[[package]]
 name = "loguru"
 version = "0.7.3"
 description = "Python logging made (stupidly) simple"
@@ -1430,4 +1441,4 @@ h11 = ">=0.9.0,<1"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "7dc067d9b4fbe953f54b157a98abc9610d12e91cf7cd0e0ec2dab53cebf51fd6"
+content-hash = "999fb0030d69b462749ba0457d1371346820eac37641311ddcc4c72ca87970ab"
