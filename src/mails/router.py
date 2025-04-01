@@ -1,6 +1,9 @@
 """Core of mails with all the endpoints."""
 
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, Query
+from sqlmodel import select
 
 from src.database import SessionDep
 from src.mails.models import Mail, MailCreate, MailPublic
@@ -31,3 +34,14 @@ async def create_mail(mail_create: MailCreate, session: SessionDep):
     session.commit()
     session.refresh(mail_db)
     return mail_db
+
+
+@router.get("/mails", response_model=list[MailPublic])
+async def read_mails(
+    session: SessionDep,
+    offset: int = 0,
+    limit: Annotated[int, Query(le=100)] = 100,
+):
+    """Read mails."""
+    mails = session.exec(select(Mail).offset(offset).limit(limit)).all()
+    return mails
