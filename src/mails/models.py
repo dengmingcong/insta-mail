@@ -1,13 +1,37 @@
 """For db models."""
 
+from datetime import datetime
+
 from sqlmodel import Field, SQLModel
 
 
-class Mail(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
-    project_name: str  # Type 'list' is not supported in SQLModel, a list should be converted to a string first.
-    project_managers: str
+class MailBase(SQLModel):
+    """Base model for mail."""
+
+    project_name: str
+    conclusion: str
+    risk: str
+    suggestion: str
+
+
+class MailCreate(MailBase):
+    """The data model to create a mail."""
+
+    project_id: int
+
+
+class Mail(MailBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    project_managers: str  # Type 'list' is not supported in SQLModel, a list should be converted to a string first.
     cloud_developers: str
     web_developers: str | None
     app_developers: str | None
     ui_testers: str | None
+    created_at: datetime | None = Field(default_factory=datetime.now)
+    last_updated: datetime | None = Field(default_factory=datetime.now)
+
+
+class MailPublic(MailBase):
+    """The public data model for mail."""
+
+    id: int

@@ -3,8 +3,7 @@
 from fastapi import APIRouter
 
 from src.database import SessionDep
-from src.mails.models import Mail
-from src.mails.schemas import MailIn
+from src.mails.models import Mail, MailCreate, MailPublic
 from src.projects.router import read_project
 from src.projects.schemas import PMProject
 
@@ -13,12 +12,15 @@ router = APIRouter(
 )
 
 
-@router.post("/mails")
-async def create_mail(mail_in: MailIn, session: SessionDep) -> Mail:
+@router.post("/mails", response_model=MailPublic)
+async def create_mail(mail_create: MailCreate, session: SessionDep):
     """Create a mail."""
-    project: PMProject = await read_project(mail_in.project_id)
+    project: PMProject = await read_project(mail_create.project_id)
     mail_db: Mail = Mail(
-        project_name=mail_in.project_name,
+        project_name=mail_create.project_name,
+        conclusion=mail_create.conclusion,
+        risk=mail_create.risk,
+        suggestion=mail_create.suggestion,
         project_managers=",".join(project.project_managers),
         cloud_developers=",".join(project.cloud_developers),
         web_developers=",".join(project.web_developers),
