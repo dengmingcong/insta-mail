@@ -23,6 +23,7 @@ class MailCreate(MailBase):
 class Mail(MailBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     project_managers: str  # Type 'list' is not supported in SQLModel, a list should be converted to a string first.
+    api_testers: str
     cloud_developers: str
     web_developers: str | None
     app_developers: str | None
@@ -35,3 +36,12 @@ class MailPublic(MailBase):
     """The public data model for mail."""
 
     id: int
+
+
+class MailPublicReadyToBeSent(SQLModel):
+    """The public data model for mail ready to be sent."""
+
+    to: list[str]
+    cc: list[str]
+    subject: str
+    body: str
