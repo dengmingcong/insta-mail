@@ -14,6 +14,7 @@ class PMProject(BaseModel):
     """Pydantic model for PM project details."""
 
     project_managers: list[str]
+    api_testers: list[str]
     cloud_developers: list[str]
     web_developers: list[str]
     app_developers: list[str]

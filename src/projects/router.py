@@ -83,6 +83,7 @@ async def read_project(project_id: int) -> PMProject:
 
     return PMProject(
         project_managers=get_role_members(raw_members, "项目经理"),
+        api_testers=get_role_members(raw_members, "云测试"),
         cloud_developers=get_role_members(raw_members, "云开发"),
         web_developers=get_role_members(raw_members, "web前端开发"),
         app_developers=get_role_members(raw_members, "app开发"),
