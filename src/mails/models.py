@@ -36,6 +36,8 @@ class MailPublic(MailBase):
     """The public data model for mail."""
 
     id: int
+    created_at: datetime
+    last_updated: datetime
 
 
 class MailPublicReadyToBeSent(SQLModel):
