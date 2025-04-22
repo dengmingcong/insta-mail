@@ -6,11 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.database import create_db_and_tables
 from src.mails.router import router as mail_router
 from src.projects.router import router as project_router
+from src.tokens.router import router as tokens_router
 
 app = FastAPI()
 
 app.include_router(project_router)
 app.include_router(mail_router)
+app.include_router(tokens_router)
 
 origins = [
     "http://localhost:3000",
