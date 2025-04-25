@@ -3,10 +3,11 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 from fastapi import APIRouter, HTTPException
+from fastapi.logger import logger
 from sqlmodel import select
 
 from src.database import SessionDep
-from src.tokens.models import Token
+from src.tokens.models import Token, TokenCreate
 from src.utils import load_env
 
 router = APIRouter(
@@ -19,24 +20,17 @@ load_env()
 
 @router.post("/tokens")
 def save_token(
-    user_id: int,
-    access_token: str,
-    refresh_token: str,
-    expires_in: int,
+    token_in: TokenCreate,
     session: SessionDep,
 ):
     """Save access and refresh tokens."""
-    expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
-    token = Token(
-        user_id=user_id,
-        access_token=access_token,
-        refresh_token=refresh_token,
-        expires_at=expires_at,
-    )
-    session.add(token)
+    token_db = Token.model_validate(token_in)
+
+    session.add(token_db)
     session.commit()
-    session.refresh(token)
-    return {"message": "Token saved successfully", "token_id": token.id}
+    session.refresh(token_db)
+    logger.info(f"Token saved successfully: token_id={token_db.id}")
+    return {"message": "Token saved successfully", "token_id": token_db.id}
 
 
 @router.post("/tokens/refresh")
@@ -103,3 +97,10 @@ def refresh_access_token(
         "access_token": new_access_token,
         "expires_in": expires_in,
     }
+
+
+@router.get("/tokens")
+def list_tokens(session: SessionDep):
+    """Retrieve a list of all tokens."""
+    tokens = session.exec(select(Token)).all()
+    return tokens
