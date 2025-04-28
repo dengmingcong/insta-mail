@@ -6,7 +6,7 @@ from sqlmodel import Field, SQLModel
 class TokenCreate(SQLModel):
     """The data model to create a token."""
 
-    user_id: int  # Foreign key to associate with a user.
+    email: str
     access_token: str
     refresh_token: str
     expires_at: int  # Timestamp in seconds.
