@@ -1,6 +1,7 @@
 """For db models."""
 
 from datetime import datetime
+from typing import Optional
 
 from sqlmodel import Field, SQLModel
 
@@ -8,8 +9,8 @@ from sqlmodel import Field, SQLModel
 class MailBase(SQLModel):
     """Base model for mail."""
 
-    project_name: str
-    conclusion: str
+    project_name: Optional[str] = None
+    conclusion: Optional[str] = None
     risk: str
     suggestion: str
 
