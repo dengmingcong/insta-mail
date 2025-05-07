@@ -17,7 +17,7 @@ router = APIRouter(
 
 @router.get("/projects")
 async def read_projects(
-    title_like: str, page_number: int = 1, page_size: int = 50
+    title_like: str | None = None, page_number: int = 1, page_size: int = 50
 ) -> list[PMProjectLocator]:
     """Query projects by matching the title.
 
