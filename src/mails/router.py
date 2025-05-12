@@ -1,7 +1,9 @@
 """Core of mails with all the endpoints."""
 
+import datetime
 from typing import Annotated
 
+import requests
 from fastapi import APIRouter, HTTPException, Query
 from jinja2 import Environment, PackageLoader
 from sqlmodel import select
@@ -10,6 +12,8 @@ from src.database import SessionDep
 from src.mails.models import Mail, MailCreate, MailPublic, MailPublicReadyToBeSent
 from src.projects.router import read_project
 from src.projects.schemas import PMProject
+from src.tokens.models import Token
+from src.tokens.router import refresh_access_token
 
 router = APIRouter(
     tags=["mails"],
@@ -104,3 +108,64 @@ async def read_mail(
         subject=subject,
         body=body,
     )
+
+
+@router.post("/mails/{mail_id}/preview")
+async def preview_mail(
+    mail_id: int,
+    email: str,
+    session: SessionDep,
+):
+    """Send mail to ourself for preview.
+
+    :param mail_id: The id of the mail to preview.
+    :param email: The email to send the preview to.
+    :param session: The database session.
+    """
+    # Get the access token from the database.
+    token: Token = session.exec(select(Token).where(Token.email == email)).first()
+
+    # If the token is not found, raise an error.
+    if not token:
+        raise HTTPException(
+            status_code=404,
+            detail="Token not found. Please login to get a new token.",
+        )
+
+    # If the token is expired or will expire in less than 5 minutes, refresh it.
+    if token.expires_at < datetime.datetime.now().timestamp() + 300:
+        token = refresh_access_token(token.id, session)
+
+    # Get email content.
+    mail: MailPublicReadyToBeSent = await read_mail(mail_id, session)
+
+    # Send the mail to the email address via microsoft graph API.
+    url = "https://graph.microsoft.com/v1.0/me/sendMail"
+    headers = {
+        "Authorization": f"Bearer {token.access_token}",
+        "Content-Type": "application/json",
+    }
+    body = {
+        "message": {
+            "subject": mail.subject,
+            "body": {
+                "contentType": "HTML",
+                "content": mail.body,
+            },
+            "toRecipients": [
+                {
+                    "emailAddress": {
+                        "address": email,
+                    },
+                },
+            ],
+        },
+        "saveToSentItems": True,
+    }
+    response = requests.post(url, headers=headers, json=body)
+    if response.status_code != 202:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"Failed to send mail, error: {response.text}",
+        )
+    return {"message": "Mail sent successfully"}
