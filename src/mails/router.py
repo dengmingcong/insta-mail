@@ -53,13 +53,13 @@ async def read_mails(
     return mails
 
 
-@router.get("/mails/{mail_id}", response_model=MailPublicReadyToBeSent)
+@router.get("/mails/{id}", response_model=MailPublicReadyToBeSent)
 async def read_mail(
-    mail_id: int,
+    id: int,
     session: SessionDep,
 ):
     """Read a mail."""
-    mail: Mail = session.get(Mail, mail_id)
+    mail: Mail = session.get(Mail, id)
 
     if not mail:
         raise HTTPException(status_code=404, detail="Mail not found")
