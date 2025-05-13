@@ -113,7 +113,7 @@ async def read_mail(
 @router.post("/mails/{id}/test")
 async def test_mail(
     id: int,
-    to: Annotated[str, Body()],
+    to: Annotated[str, Body(embed=True)],
     session: SessionDep,
 ):
     """Send mail to somebody for test.
