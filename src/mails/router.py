@@ -4,7 +4,7 @@ import datetime
 from typing import Annotated
 
 import requests
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Body, HTTPException, Query
 from jinja2 import Environment, PackageLoader
 from sqlmodel import select
 
@@ -110,20 +110,20 @@ async def read_mail(
     )
 
 
-@router.post("/mails/{mail_id}/preview")
-async def preview_mail(
-    mail_id: int,
-    email: str,
+@router.post("/mails/{id}/test")
+async def test_mail(
+    id: int,
+    to: Annotated[str, Body()],
     session: SessionDep,
 ):
-    """Send mail to ourself for preview.
+    """Send mail to somebody for test.
 
     :param mail_id: The id of the mail to preview.
     :param email: The email to send the preview to.
     :param session: The database session.
     """
     # Get the access token from the database.
-    token: Token = session.exec(select(Token).where(Token.email == email)).first()
+    token: Token = session.exec(select(Token).where(Token.email == to)).first()
 
     # If the token is not found, raise an error.
     if not token:
@@ -137,7 +137,7 @@ async def preview_mail(
         token = refresh_access_token(token.id, session)
 
     # Get email content.
-    mail: MailPublicReadyToBeSent = await read_mail(mail_id, session)
+    mail: MailPublicReadyToBeSent = await read_mail(id, session)
 
     # Send the mail to the email address via microsoft graph API.
     url = "https://graph.microsoft.com/v1.0/me/sendMail"
@@ -155,7 +155,7 @@ async def preview_mail(
             "toRecipients": [
                 {
                     "emailAddress": {
-                        "address": email,
+                        "address": to,
                     },
                 },
             ],
