@@ -1,9 +1,14 @@
 """Core of projects with all the endpoints."""
 
 import datetime
+from threading import Lock
+from typing import Any, Dict
+from uuid import uuid4
 
 import requests
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from playwright.sync_api import Browser, Page, Playwright, sync_playwright
+from pydantic import BaseModel
 
 from src.projects import constants as project_constants
 from src.projects import service as project_service
@@ -13,6 +18,20 @@ from src.projects.utils import get_role_members
 router = APIRouter(
     tags=["projects"],
 )
+
+# In-memory store for Playwright sessions
+_sessions: Dict[str, Dict[str, Any]] = {}
+_sessions_lock = Lock()
+
+
+class CompanyLoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class CompanyOTPRequest(BaseModel):
+    session_id: str
+    otp: str
 
 
 @router.get("/projects")
@@ -89,3 +108,57 @@ async def read_project(project_id: int) -> PMProject:
         app_developers=get_role_members(raw_members, "app开发"),
         ui_testers=get_role_members(raw_members, "系统测试"),
     )
+
+
+@router.post("/company/login")
+def company_login(request: CompanyLoginRequest):
+    playwright = sync_playwright().start()
+    browser = playwright.chromium.launch(headless=False)
+    context = browser.new_context()
+    page = context.new_page()
+    # Navigate to company login page
+    page.goto(project_constants.VesyncService.PM_FRONTEND_ORIGIN)
+    page.fill("#normal_login_username", request.username)
+    page.fill("#normal_login_password", request.password)
+    page.click("button.login-form-button")
+    try:
+        page.wait_for_selector(".mfa-form input", timeout=10000)
+        # MFA required
+        session_id = str(uuid4())
+        with _sessions_lock:
+            _sessions[session_id] = {
+                "playwright": playwright,
+                "browser": browser,
+                "context": context,
+                "page": page,
+            }
+        return {"status": "need_otp", "session_id": session_id}
+    except Exception:
+        # No OTP step, fetch token directly
+        cookies = context.cookies()
+        token = page.evaluate("() => window.localStorage.getItem('token')")
+        browser.close()
+        playwright.stop()
+        return {"status": "success", "cookies": cookies, "token": token}
+
+
+@router.post("/company/otp")
+def company_otp(request: CompanyOTPRequest):
+    with _sessions_lock:
+        session = _sessions.get(request.session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    page: Page = session["page"]
+    context = session["context"]
+    browser: Browser = session["browser"]
+    playwright: Playwright = session["playwright"]
+    page.fill(".mfa-form input", request.otp)
+    page.click(".mfa-form button:first-of-type")
+    page.wait_for_load_state("networkidle")
+    cookies = context.cookies()
+    token = page.evaluate("() => window.localStorage.getItem('userLogin')")
+    browser.close()
+    playwright.stop()
+    with _sessions_lock:
+        del _sessions[request.session_id]
+    return {"status": "success", "cookies": cookies, "token": token}
