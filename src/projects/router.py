@@ -1,6 +1,7 @@
 """Core of projects with all the endpoints."""
 
 import datetime
+import time
 from threading import Lock
 from typing import Any, Dict
 from uuid import uuid4
@@ -156,7 +157,21 @@ def company_otp(request: CompanyOTPRequest):
     page.click(".mfa-form button:first-of-type")
     page.wait_for_load_state("networkidle")
     cookies = context.cookies()
-    token = page.evaluate("() => window.localStorage.getItem('userLogin')")
+    # Poll for userLogin in localStorage
+    max_attempts = 10
+    poll_interval = 0.5
+    token = None
+    for _ in range(max_attempts):
+        token = page.evaluate("() => window.localStorage.getItem('userLogin')")
+        if token:
+            break
+        time.sleep(poll_interval)
+    if not token:
+        browser.close()
+        playwright.stop()
+        raise HTTPException(
+            status_code=500, detail="Timeout waiting for userLogin token"
+        )
     browser.close()
     playwright.stop()
     with _sessions_lock:
