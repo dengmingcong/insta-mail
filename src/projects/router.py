@@ -123,53 +123,61 @@ def company_login(request: CompanyLoginRequest):
     page.fill("#normal_login_password", request.password)
     page.click("button.login-form-button")
 
-    # First, check for successful login (app element) for 5 seconds
-    try:
-        page.wait_for_selector("#app", timeout=5000)
-        # Login successful, poll for userLogin token
-        cookies = context.cookies()
-        # Poll for userLogin in localStorage
-        max_attempts = 10
-        poll_interval = 0.5
-        token = None
-        for _ in range(max_attempts):
-            token = page.evaluate("() => window.localStorage.getItem('userLogin')")
-            if token:
-                break
-            time.sleep(poll_interval)
-        if not token:
+    # Poll for either successful login (#app) or MFA form for 10 seconds
+    max_attempts = 20
+    poll_interval = 0.5
+
+    for _ in range(max_attempts):
+        try:
+            # Check for successful login
+            page.wait_for_selector("#app", timeout=500)
+            # Login successful, poll for userLogin token
+            cookies = context.cookies()
+            # Poll for userLogin in localStorage
+            token_attempts = 10
+            token_interval = 0.5
+            token = None
+            for _ in range(token_attempts):
+                token = page.evaluate("() => window.localStorage.getItem('userLogin')")
+                if token:
+                    break
+                time.sleep(token_interval)
+            if not token:
+                browser.close()
+                playwright.stop()
+                raise HTTPException(
+                    status_code=500, detail="Timeout waiting for userLogin token"
+                )
             browser.close()
             playwright.stop()
-            raise HTTPException(
-                status_code=500, detail="Timeout waiting for userLogin token"
-            )
-        browser.close()
-        playwright.stop()
-        return {"status": "success", "cookies": cookies, "token": token}
-    except Exception:
-        # App element not found, check for MFA
-        pass
+            return {"status": "success", "cookies": cookies, "token": token}
+        except Exception:
+            # App element not found, check for MFA
+            pass
 
-    # If app element not found after 5 seconds, check for MFA
-    try:
-        page.wait_for_selector(".mfa-form input", timeout=5000)
-        # MFA required
-        session_id = str(uuid4())
-        with _sessions_lock:
-            _sessions[session_id] = {
-                "playwright": playwright,
-                "browser": browser,
-                "context": context,
-                "page": page,
-            }
-        return {"status": "need_otp", "session_id": session_id}
-    except Exception:
-        # Neither app nor MFA found, login might have failed
-        browser.close()
-        playwright.stop()
-        raise HTTPException(
-            status_code=400, detail="Login failed or unexpected page state"
-        )
+        try:
+            # Check for MFA form
+            page.wait_for_selector(".mfa-form input", timeout=500)
+            # MFA required
+            session_id = str(uuid4())
+            with _sessions_lock:
+                _sessions[session_id] = {
+                    "playwright": playwright,
+                    "browser": browser,
+                    "context": context,
+                    "page": page,
+                }
+            return {"status": "need_otp", "session_id": session_id}
+        except Exception:
+            # MFA element not found, continue polling
+            pass
+
+        time.sleep(poll_interval)
+
+    # Neither app nor MFA found after 10 seconds, login might have failed
+    browser.close()
+    playwright.stop()
+    raise HTTPException(status_code=400, detail="Login failed or unexpected page state")
 
 
 @router.post("/company/otp")
