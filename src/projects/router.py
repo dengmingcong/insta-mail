@@ -122,8 +122,37 @@ def company_login(request: CompanyLoginRequest):
     page.fill("#normal_login_username", request.username)
     page.fill("#normal_login_password", request.password)
     page.click("button.login-form-button")
+
+    # First, check for successful login (app element) for 5 seconds
     try:
-        page.wait_for_selector(".mfa-form input", timeout=10000)
+        page.wait_for_selector("#app", timeout=5000)
+        # Login successful, poll for userLogin token
+        cookies = context.cookies()
+        # Poll for userLogin in localStorage
+        max_attempts = 10
+        poll_interval = 0.5
+        token = None
+        for _ in range(max_attempts):
+            token = page.evaluate("() => window.localStorage.getItem('userLogin')")
+            if token:
+                break
+            time.sleep(poll_interval)
+        if not token:
+            browser.close()
+            playwright.stop()
+            raise HTTPException(
+                status_code=500, detail="Timeout waiting for userLogin token"
+            )
+        browser.close()
+        playwright.stop()
+        return {"status": "success", "cookies": cookies, "token": token}
+    except Exception:
+        # App element not found, check for MFA
+        pass
+
+    # If app element not found after 5 seconds, check for MFA
+    try:
+        page.wait_for_selector(".mfa-form input", timeout=5000)
         # MFA required
         session_id = str(uuid4())
         with _sessions_lock:
@@ -135,12 +164,12 @@ def company_login(request: CompanyLoginRequest):
             }
         return {"status": "need_otp", "session_id": session_id}
     except Exception:
-        # No OTP step, fetch token directly
-        cookies = context.cookies()
-        token = page.evaluate("() => window.localStorage.getItem('token')")
+        # Neither app nor MFA found, login might have failed
         browser.close()
         playwright.stop()
-        return {"status": "success", "cookies": cookies, "token": token}
+        raise HTTPException(
+            status_code=400, detail="Login failed or unexpected page state"
+        )
 
 
 @router.post("/company/otp")
