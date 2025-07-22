@@ -8,10 +8,10 @@ from fastapi import APIRouter, Body, HTTPException, Query
 from jinja2 import Environment, PackageLoader
 from sqlmodel import select
 
+from src.adapters.vesync.projects.router import read_project
+from src.adapters.vesync.projects.schemas import PMProject
 from src.database import SessionDep
 from src.mails.models import Mail, MailCreate, MailPublic, MailPublicReadyToBeSent
-from src.projects.router import read_project
-from src.projects.schemas import PMProject
 from src.tokens.models import Token
 from src.tokens.router import refresh_access_token
 
