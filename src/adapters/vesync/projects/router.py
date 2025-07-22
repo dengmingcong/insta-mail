@@ -9,11 +9,15 @@ from uuid import uuid4
 import requests
 from fastapi import APIRouter, HTTPException
 from playwright.sync_api import Browser, Page, Playwright, sync_playwright
-from pydantic import BaseModel
 
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects import service as project_service
-from src.adapters.vesync.projects.schemas import PMProject, PMProjectLocator
+from src.adapters.vesync.projects.schemas import (
+    PmLoginRequest,
+    PmOTPRequest,
+    PMProject,
+    PMProjectLocator,
+)
 from src.adapters.vesync.projects.utils import get_role_members
 
 router = APIRouter(prefix="/projects")
@@ -23,18 +27,8 @@ _sessions: Dict[str, Dict[str, Any]] = {}
 _sessions_lock = Lock()
 
 
-class CompanyLoginRequest(BaseModel):
-    username: str
-    password: str
-
-
-class CompanyOTPRequest(BaseModel):
-    session_id: str
-    otp: str
-
-
 @router.post("/login")
-def company_login(request: CompanyLoginRequest):
+def signin_pm(request: PmLoginRequest):
     playwright = sync_playwright().start()
     browser = playwright.chromium.launch(headless=False)
     context = browser.new_context()
@@ -103,7 +97,7 @@ def company_login(request: CompanyLoginRequest):
 
 
 @router.post("/otp")
-def company_otp(request: CompanyOTPRequest):
+def enter_otp(request: PmOTPRequest):
     with _sessions_lock:
         session = _sessions.get(request.session_id)
     if not session:
