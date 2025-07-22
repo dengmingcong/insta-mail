@@ -16,7 +16,7 @@ from src.adapters.vesync.projects import service as project_service
 from src.adapters.vesync.projects.schemas import PMProject, PMProjectLocator
 from src.adapters.vesync.projects.utils import get_role_members
 
-router = APIRouter()
+router = APIRouter(prefix="/projects")
 
 # In-memory store for Playwright sessions
 _sessions: Dict[str, Dict[str, Any]] = {}
@@ -33,83 +33,7 @@ class CompanyOTPRequest(BaseModel):
     otp: str
 
 
-@router.get("/projects")
-async def read_projects(
-    title_like: str | None = None, page_number: int = 1, page_size: int = 50
-) -> list[PMProjectLocator]:
-    """Query projects by matching the title.
-
-    :param title_like: Title to match.
-    :param page_number: Page number.
-    :param page_size: Page size.
-    """
-    cookies: dict = project_service.auth_pm()
-
-    response = requests.post(
-        project_constants.VesyncService.PM_API_ORIGIN
-        + project_constants.APIPath.SEARCH_PROJECTS,
-        json={
-            "context": {
-                **project_constants.VesyncService.API_CONTEXT,
-                "method": "pageProjectSummaryV2",
-                "accountID": cookies["account_id"],
-                "token": cookies["token"],
-                "traceId": int(datetime.datetime.now().timestamp()),
-            },
-            "data": {
-                "projectType": 1,
-                "relatedToMe": False,
-                "onlyCurrGroup": True,
-                "projectStatus": [],
-                "projectName": title_like,
-                "pageNo": page_number,
-                "pageSize": page_size,
-            },
-        },
-    )
-
-    return [
-        PMProjectLocator(id=project["projectId"], title=project["projectFullName"])
-        for project in response.json()["result"]["projectList"]
-    ]
-
-
-@router.get("/projects/{project_id}")
-async def read_project(project_id: int) -> PMProject:
-    """Query project details by project ID.
-
-    :param project_id: Project ID.
-    """
-    cookies: dict = project_service.auth_pm()
-
-    response = requests.post(
-        project_constants.VesyncService.PM_API_ORIGIN
-        + project_constants.APIPath.GET_PROJECT_MEMBERS,
-        json={
-            "context": {
-                **project_constants.VesyncService.API_CONTEXT,
-                "method": "getRelatedProjectMember",
-                "accountID": cookies["account_id"],
-                "token": cookies["token"],
-                "traceId": int(datetime.datetime.now().timestamp()),
-            },
-            "data": {"projectId": project_id},
-        },
-    )
-
-    raw_members = response.json()["result"]["postMemberList"]
-
-    return PMProject(
-        project_managers=get_role_members(raw_members, "项目经理"),
-        api_testers=get_role_members(raw_members, "云测试"),
-        cloud_developers=get_role_members(raw_members, "云开发"),
-        web_developers=get_role_members(raw_members, "web前端开发"),
-        app_developers=get_role_members(raw_members, "app开发"),
-        ui_testers=get_role_members(raw_members, "系统测试"),
-    )
-
-
-@router.post("/company/login")
+@router.post("/login")
 def company_login(request: CompanyLoginRequest):
     playwright = sync_playwright().start()
     browser = playwright.chromium.launch(headless=False)
@@ -178,7 +102,7 @@ def company_login(request: CompanyLoginRequest):
     raise HTTPException(status_code=400, detail="Login failed or unexpected page state")
 
 
-@router.post("/company/otp")
+@router.post("/otp")
 def company_otp(request: CompanyOTPRequest):
     with _sessions_lock:
         session = _sessions.get(request.session_id)
@@ -212,3 +136,79 @@ def company_otp(request: CompanyOTPRequest):
     with _sessions_lock:
         del _sessions[request.session_id]
     return {"status": "success", "cookies": cookies, "token": token}
+
+
+@router.get("/")
+async def read_projects(
+    title_like: str | None = None, page_number: int = 1, page_size: int = 50
+) -> list[PMProjectLocator]:
+    """Query projects by matching the title.
+
+    :param title_like: Title to match.
+    :param page_number: Page number.
+    :param page_size: Page size.
+    """
+    cookies: dict = project_service.auth_pm()
+
+    response = requests.post(
+        project_constants.VesyncService.PM_API_ORIGIN
+        + project_constants.APIPath.SEARCH_PROJECTS,
+        json={
+            "context": {
+                **project_constants.VesyncService.API_CONTEXT,
+                "method": "pageProjectSummaryV2",
+                "accountID": cookies["account_id"],
+                "token": cookies["token"],
+                "traceId": int(datetime.datetime.now().timestamp()),
+            },
+            "data": {
+                "projectType": 1,
+                "relatedToMe": False,
+                "onlyCurrGroup": True,
+                "projectStatus": [],
+                "projectName": title_like,
+                "pageNo": page_number,
+                "pageSize": page_size,
+            },
+        },
+    )
+
+    return [
+        PMProjectLocator(id=project["projectId"], title=project["projectFullName"])
+        for project in response.json()["result"]["projectList"]
+    ]
+
+
+@router.get("/{project_id}")
+async def read_project(project_id: int) -> PMProject:
+    """Query project details by project ID.
+
+    :param project_id: Project ID.
+    """
+    cookies: dict = project_service.auth_pm()
+
+    response = requests.post(
+        project_constants.VesyncService.PM_API_ORIGIN
+        + project_constants.APIPath.GET_PROJECT_MEMBERS,
+        json={
+            "context": {
+                **project_constants.VesyncService.API_CONTEXT,
+                "method": "getRelatedProjectMember",
+                "accountID": cookies["account_id"],
+                "token": cookies["token"],
+                "traceId": int(datetime.datetime.now().timestamp()),
+            },
+            "data": {"projectId": project_id},
+        },
+    )
+
+    raw_members = response.json()["result"]["postMemberList"]
+
+    return PMProject(
+        project_managers=get_role_members(raw_members, "项目经理"),
+        api_testers=get_role_members(raw_members, "云测试"),
+        cloud_developers=get_role_members(raw_members, "云开发"),
+        web_developers=get_role_members(raw_members, "web前端开发"),
+        app_developers=get_role_members(raw_members, "app开发"),
+        ui_testers=get_role_members(raw_members, "系统测试"),
+    )
