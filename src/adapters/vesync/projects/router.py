@@ -11,10 +11,10 @@ from fastapi import APIRouter, HTTPException
 from playwright.sync_api import Browser, Page, Playwright, sync_playwright
 from pydantic import BaseModel
 
-from src.projects import constants as project_constants
-from src.projects import service as project_service
-from src.projects.schemas import PMProject, PMProjectLocator
-from src.projects.utils import get_role_members
+from src.adapters.vesync.projects import constants as project_constants
+from src.adapters.vesync.projects import service as project_service
+from src.adapters.vesync.projects.schemas import PMProject, PMProjectLocator
+from src.adapters.vesync.projects.utils import get_role_members
 
 router = APIRouter(
     tags=["projects"],

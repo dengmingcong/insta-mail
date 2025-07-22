@@ -13,8 +13,12 @@ from selenium.common import NoSuchElementException
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from selenium.webdriver.remote.webelement import WebElement
 
-from src.projects.constants import LoginPageLocators, MainPageLocators, VesyncService
-from src.projects.exceptions import (
+from src.adapters.vesync.projects.constants import (
+    LoginPageLocators,
+    MainPageLocators,
+    VesyncService,
+)
+from src.adapters.vesync.projects.exceptions import (
     ElementNotFoundError,
     TokenNotFoundInLocalStorageError,
 )
