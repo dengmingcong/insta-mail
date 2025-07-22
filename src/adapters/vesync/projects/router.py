@@ -16,9 +16,7 @@ from src.adapters.vesync.projects import service as project_service
 from src.adapters.vesync.projects.schemas import PMProject, PMProjectLocator
 from src.adapters.vesync.projects.utils import get_role_members
 
-router = APIRouter(
-    tags=["projects"],
-)
+router = APIRouter()
 
 # In-memory store for Playwright sessions
 _sessions: Dict[str, Dict[str, Any]] = {}
