@@ -76,8 +76,6 @@ def signin_pm(request: PmLoginRequest):
                 break
             time.sleep(TOKEN_INTERVAL)
         if not token:
-            browser.close()
-            p.stop()
             raise HTTPException(
                 status_code=500, detail="Timeout waiting for userLogin token"
             )
