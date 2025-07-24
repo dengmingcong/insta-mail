@@ -8,7 +8,7 @@ from uuid import uuid4
 
 import requests
 from fastapi import APIRouter, HTTPException
-from playwright.sync_api import Browser, Page, Playwright, sync_playwright
+from playwright.sync_api import Browser, Page, Playwright, expect, sync_playwright
 
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects import service as project_service
@@ -29,70 +29,61 @@ _sessions_lock = Lock()
 
 @router.post("/login")
 def signin_pm(request: PmLoginRequest):
-    playwright = sync_playwright().start()
-    browser = playwright.chromium.launch(headless=False)
-    context = browser.new_context()
-    page = context.new_page()
-    # Navigate to company login page
-    page.goto(project_constants.VesyncService.PM_FRONTEND_ORIGIN)
-    page.fill("#normal_login_username", request.username)
-    page.fill("#normal_login_password", request.password)
-    page.click("button.login-form-button")
+    """Signin PM using Playwright.
 
-    # Poll for either successful login (#app) or MFA form for 10 seconds
-    max_attempts = 20
-    poll_interval = 0.5
+    :param request: PmLoginRequest containing username and password.
+    :raises HTTPException: If login fails or MFA is required.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)
+        context = browser.new_context()
+        page = context.new_page()
 
-    for _ in range(max_attempts):
-        try:
-            # Check for successful login
-            page.wait_for_selector("#app", timeout=500)
-            # Login successful, poll for userLogin token
-            cookies = context.cookies()
-            # Poll for userLogin in localStorage
-            token_attempts = 10
-            token_interval = 0.5
-            token = None
-            for _ in range(token_attempts):
-                token = page.evaluate("() => window.localStorage.getItem('userLogin')")
-                if token:
-                    break
-                time.sleep(token_interval)
-            if not token:
-                browser.close()
-                playwright.stop()
-                raise HTTPException(
-                    status_code=500, detail="Timeout waiting for userLogin token"
-                )
-            browser.close()
-            playwright.stop()
-            return {"status": "success", "cookies": cookies, "token": token}
-        except Exception:
-            # App element not found, check for MFA
-            pass
+        # Navigate to PM login page.
+        page.goto(project_constants.VesyncService.PM_FRONTEND_ORIGIN)
 
-        try:
-            # Check for MFA form
-            page.wait_for_selector(".mfa-form input", timeout=500)
-            # MFA required
+        # Input username and password.
+        page.get_by_role("textbox", name="请输入邮箱前缀或邮箱地址").fill(
+            request.username
+        )
+        page.get_by_role("textbox", name="请输入密码").fill(request.password)
+        page.get_by_role("button", name="登 录").click()
+
+        # Wait for either successful login or MFA form.
+        homepage = page.get_by_text("PM系统")
+        opt_button = page.locator("css=.mfa-form input")
+        expect(homepage.or_(opt_button).first).to_be_visible()
+
+        # MFA required, return session ID for OTP entry.
+        if opt_button.is_visible():
             session_id = str(uuid4())
             with _sessions_lock:
                 _sessions[session_id] = {
-                    "playwright": playwright,
+                    "playwright": p,
                     "browser": browser,
                     "context": context,
                     "page": page,
                 }
             return {"status": "need_otp", "session_id": session_id}
-        except Exception:
-            # MFA element not found, continue polling
-            pass
 
-        time.sleep(poll_interval)
+        # Successful login, check for userLogin token in localStorage.
+        TOKEN_ATTEMPTS = 10
+        TOKEN_INTERVAL = 0.5
+        token = None
+        for _ in range(TOKEN_ATTEMPTS):
+            token = page.evaluate("() => window.localStorage.getItem('userLogin')")
+            if token:
+                break
+            time.sleep(TOKEN_INTERVAL)
+        if not token:
+            browser.close()
+            p.stop()
+            raise HTTPException(
+                status_code=500, detail="Timeout waiting for userLogin token"
+            )
+        return {"status": "success", "token": token}
 
-    # Neither app nor MFA found after 10 seconds, login might have failed
-    browser.close()
-    playwright.stop()
+    # If we reach here, it means login failed or unexpected page state.
     raise HTTPException(status_code=400, detail="Login failed or unexpected page state")
 
 
