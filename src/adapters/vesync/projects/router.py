@@ -100,33 +100,38 @@ def enter_otp(request: PmOtpRequest):
 
     playwright: Playwright = session["playwright"]
     browser: Browser = session["browser"]
-    context = session["context"]
     page: Page = session["page"]
 
-    page.fill(".mfa-form input", request.otp)
-    page.click(".mfa-form button:first-of-type")
-    page.wait_for_load_state("networkidle")
-    cookies = context.cookies()
-    # Poll for userLogin in localStorage
-    max_attempts = 10
-    poll_interval = 0.5
+    # Fill in the OTP and submit.
+    page.get_by_role("textbox", name="请输入6位验证码").fill(request.otp)
+    page.get_by_role("button", name="验 证").click()
+
+    # Poll for userLogin in localStorage.
+    TOKEN_ATTEMPTS = 10
+    TOKEN_INTERVAL = 0.5
     token = None
-    for _ in range(max_attempts):
+    for _ in range(TOKEN_ATTEMPTS):
         token = page.evaluate("() => window.localStorage.getItem('userLogin')")
         if token:
             break
-        time.sleep(poll_interval)
+        time.sleep(TOKEN_INTERVAL)
+
+    # If token is not found, close browser and raise exception.
     if not token:
         browser.close()
         playwright.stop()
+        with _sessions_lock:
+            del _sessions[request.session_id]
         raise HTTPException(
             status_code=500, detail="Timeout waiting for userLogin token"
         )
+
+    # If token is found, close browser and return token.
     browser.close()
     playwright.stop()
     with _sessions_lock:
         del _sessions[request.session_id]
-    return {"status": "success", "cookies": cookies, "token": token}
+    return {"status": "success", "token": token}
 
 
 @router.get("/")
