@@ -48,9 +48,9 @@ def signin_pm(request: PmLoginRequest):
     page.get_by_role("button", name="登 录").click()
 
     # Wait for either successful login or MFA form.
-    homepage = page.get_by_text("PM系统")
+    homepage_title = page.get_by_text("PM系统")
     opt_input = page.get_by_role("textbox", name="请输入6位验证码")
-    expect(homepage.or_(opt_input).first).to_be_visible()
+    expect(homepage_title.or_(opt_input).first).to_be_visible()
 
     # MFA required, return session ID for OTP entry.
     if opt_input.is_visible():
@@ -66,7 +66,9 @@ def signin_pm(request: PmLoginRequest):
         # Cache session and do not close browser, waiting for OTP.
         return {"status": "need_otp", "session_id": session_id}
 
-    # Successful login, check for 'userLogin' token in localStorage.
+    # Successful login, ensure navigation has fully loaded.
+    page.wait_for_url("**/my-place")
+
     TOKEN_ATTEMPTS = 10
     TOKEN_INTERVAL = 0.5
     token = None
@@ -107,7 +109,7 @@ def enter_otp(request: PmOtpRequest):
     page.get_by_role("button", name="验 证").click()
 
     # Wait for successful login.
-    expect(page.get_by_text("PM系统")).to_be_visible()
+    page.wait_for_url("**/my-place")
 
     # Poll for userLogin in localStorage.
     TOKEN_ATTEMPTS = 10
