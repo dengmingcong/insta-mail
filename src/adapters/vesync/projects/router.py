@@ -92,14 +92,17 @@ def enter_otp(request: PmOtpRequest):
 
     :param request: PmOtpRequest containing session ID and OTP.
     """
+    # Get session from in-memory store.
     with _sessions_lock:
         session = _sessions.get(request.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    page: Page = session["page"]
-    context = session["context"]
-    browser: Browser = session["browser"]
+
     playwright: Playwright = session["playwright"]
+    browser: Browser = session["browser"]
+    context = session["context"]
+    page: Page = session["page"]
+
     page.fill(".mfa-form input", request.otp)
     page.click(".mfa-form button:first-of-type")
     page.wait_for_load_state("networkidle")
