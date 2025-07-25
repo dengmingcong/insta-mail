@@ -87,6 +87,10 @@ def signin_pm(request: PmLoginRequest):
 
 @router.post("/otp")
 def enter_otp(request: PmOtpRequest):
+    """Enter OTP for MFA.
+
+    :param request: PmOtpRequest containing session ID and OTP.
+    """
     with _sessions_lock:
         session = _sessions.get(request.session_id)
     if not session:
