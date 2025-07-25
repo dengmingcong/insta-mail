@@ -106,6 +106,9 @@ def enter_otp(request: PmOtpRequest):
     page.get_by_role("textbox", name="请输入6位验证码").fill(request.otp)
     page.get_by_role("button", name="验 证").click()
 
+    # Wait for successful login.
+    expect(page.get_by_text("PM系统")).to_be_visible()
+
     # Poll for userLogin in localStorage.
     TOKEN_ATTEMPTS = 10
     TOKEN_INTERVAL = 0.5
