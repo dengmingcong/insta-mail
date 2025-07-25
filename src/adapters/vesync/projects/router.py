@@ -66,7 +66,7 @@ def signin_pm(request: PmLoginRequest):
                 }
             return {"status": "need_otp", "session_id": session_id}
 
-        # Successful login, check for userLogin token in localStorage.
+        # Successful login, check for 'userLogin' token in localStorage.
         TOKEN_ATTEMPTS = 10
         TOKEN_INTERVAL = 0.5
         token = None
