@@ -34,55 +34,56 @@ def signin_pm(request: PmLoginRequest):
     :param request: PmLoginRequest containing username and password.
     :raises HTTPException: If login fails or MFA is required.
     """
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
-        context = browser.new_context()
-        page = context.new_page()
+    playwright = sync_playwright().start()
+    browser = playwright.chromium.launch(headless=False)
+    context = browser.new_context()
+    page = context.new_page()
 
-        # Navigate to PM login page.
-        page.goto(project_constants.VesyncService.PM_FRONTEND_ORIGIN)
+    # Navigate to PM login page.
+    page.goto(project_constants.VesyncService.PM_FRONTEND_ORIGIN)
 
-        # Input username and password.
-        page.get_by_role("textbox", name="请输入邮箱前缀或邮箱地址").fill(
-            request.username
+    # Input username and password.
+    page.get_by_role("textbox", name="请输入邮箱前缀或邮箱地址").fill(request.username)
+    page.get_by_role("textbox", name="请输入密码").fill(request.password)
+    page.get_by_role("button", name="登 录").click()
+
+    # Wait for either successful login or MFA form.
+    homepage = page.get_by_text("PM系统")
+    opt_input = page.get_by_role("textbox", name="请输入6位验证码")
+    expect(homepage.or_(opt_input).first).to_be_visible()
+
+    # MFA required, return session ID for OTP entry.
+    if opt_input.is_visible():
+        session_id = str(uuid4())
+        with _sessions_lock:
+            _sessions[session_id] = {
+                "playwright": playwright,
+                "browser": browser,
+                "context": context,
+                "page": page,
+            }
+
+        # Cache session and do not close browser, waiting for OTP.
+        return {"status": "need_otp", "session_id": session_id}
+
+    # Successful login, check for 'userLogin' token in localStorage.
+    TOKEN_ATTEMPTS = 10
+    TOKEN_INTERVAL = 0.5
+    token = None
+    for _ in range(TOKEN_ATTEMPTS):
+        token = page.evaluate("() => window.localStorage.getItem('userLogin')")
+        if token:
+            break
+        time.sleep(TOKEN_INTERVAL)
+    if not token:
+        raise HTTPException(
+            status_code=500, detail="Timeout waiting for userLogin token"
         )
-        page.get_by_role("textbox", name="请输入密码").fill(request.password)
-        page.get_by_role("button", name="登 录").click()
 
-        # Wait for either successful login or MFA form.
-        homepage = page.get_by_text("PM系统")
-        opt_input = page.get_by_role("textbox", name="请输入6位验证码")
-        expect(homepage.or_(opt_input).first).to_be_visible()
-
-        # MFA required, return session ID for OTP entry.
-        if opt_input.is_visible():
-            session_id = str(uuid4())
-            with _sessions_lock:
-                _sessions[session_id] = {
-                    "playwright": p,
-                    "browser": browser,
-                    "context": context,
-                    "page": page,
-                }
-            return {"status": "need_otp", "session_id": session_id}
-
-        # Successful login, check for 'userLogin' token in localStorage.
-        TOKEN_ATTEMPTS = 10
-        TOKEN_INTERVAL = 0.5
-        token = None
-        for _ in range(TOKEN_ATTEMPTS):
-            token = page.evaluate("() => window.localStorage.getItem('userLogin')")
-            if token:
-                break
-            time.sleep(TOKEN_INTERVAL)
-        if not token:
-            raise HTTPException(
-                status_code=500, detail="Timeout waiting for userLogin token"
-            )
-        return {"status": "success", "token": token}
-
-    # If we reach here, it means login failed or unexpected page state.
-    raise HTTPException(status_code=400, detail="Login failed or unexpected page state")
+    # Close browser and playwright session before returning token.
+    browser.close()
+    playwright.stop()
+    return {"status": "success", "token": token}
 
 
 @router.post("/otp")
