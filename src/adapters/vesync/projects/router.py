@@ -51,11 +51,11 @@ def signin_pm(request: PmLoginRequest):
 
         # Wait for either successful login or MFA form.
         homepage = page.get_by_text("PM系统")
-        opt_button = page.locator("css=.mfa-form input")
-        expect(homepage.or_(opt_button).first).to_be_visible()
+        opt_input = page.get_by_role("textbox", name="请输入6位验证码")
+        expect(homepage.or_(opt_input).first).to_be_visible()
 
         # MFA required, return session ID for OTP entry.
-        if opt_button.is_visible():
+        if opt_input.is_visible():
             session_id = str(uuid4())
             with _sessions_lock:
                 _sessions[session_id] = {
