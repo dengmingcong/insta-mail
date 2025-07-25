@@ -14,7 +14,7 @@ from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects import service as project_service
 from src.adapters.vesync.projects.schemas import (
     PmLoginRequest,
-    PmOTPRequest,
+    PmOtpRequest,
     PMProject,
     PMProjectLocator,
 )
@@ -86,7 +86,7 @@ def signin_pm(request: PmLoginRequest):
 
 
 @router.post("/otp")
-def enter_otp(request: PmOTPRequest):
+def enter_otp(request: PmOtpRequest):
     with _sessions_lock:
         session = _sessions.get(request.session_id)
     if not session:

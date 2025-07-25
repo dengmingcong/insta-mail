@@ -8,7 +8,7 @@ class PmLoginRequest(BaseModel):
     password: str
 
 
-class PmOTPRequest(BaseModel):
+class PmOtpRequest(BaseModel):
     session_id: str
     otp: str
 
