@@ -27,9 +27,9 @@ API_GET_PROJECT_PLANS: str = "/platform/admin/pmProject/v2/getProjectSchedule"
 
 
 class LoginPageLocators:
-    USERNAME_INPUT = (By.ID, "normal_login_username")
-    PASSWORD_INPUT = (By.ID, "normal_login_password")
-    LOG_IN_BUTTON = (By.CSS_SELECTOR, "button.login-form-button")
+    USERNAME_INPUT: dict = {"role": "textbox", "name": "请输入邮箱前缀或邮箱地址"}
+    PASSWORD_INPUT: dict = {"role": "textbox", "name": "请输入密码"}
+    LOG_IN_BUTTON: dict = {"role": "button", "name": "登 录"}
 
 
 class MainPageLocators:
