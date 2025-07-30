@@ -2,8 +2,12 @@
 
 from selenium.webdriver.common.by import By
 
+# PM frontend origin URL, which user input in browser.
 PM_FRONTEND_ORIGIN: str = "https://pm.vesync.co/"
+
+# PM API origin URL, which is used for API requests.
 PM_API_ORIGIN: str = "https://pmapi.vesync.co"
+# PM API context for requests.
 PM_API_CONTEXT: dict = {
     "osInfo": "MacIntel",
     "clientInfo": "pc",
@@ -16,6 +20,7 @@ PM_API_CONTEXT: dict = {
     "debugMode": True,
 }
 
+# API paths for PM service.
 API_SEARCH_PROJECTS: str = "/platform/admin/pmProject/v2/pageProjectSummaryV2"
 API_GET_PROJECT_MEMBERS: str = "/platform/admin/pmProject/v2/getRelatedProjectMember"
 API_GET_PROJECT_PLANS: str = "/platform/admin/pmProject/v2/getProjectSchedule"
