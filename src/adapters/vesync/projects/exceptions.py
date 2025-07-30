@@ -9,7 +9,7 @@ class ElementNotFoundError(BaseError):
     pass
 
 
-class TokenNotFoundInLocalStorageError(BaseError):
-    """Raised when a token is not saved to local storage."""
+class ValueNotFoundInLocalStorageError(BaseError):
+    """Raised when a value is not found in local storage."""
 
     pass
