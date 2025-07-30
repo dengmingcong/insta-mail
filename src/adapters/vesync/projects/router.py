@@ -35,7 +35,7 @@ def signin_pm(request: PmLoginRequest):
     :raises HTTPException: If login fails or MFA is required.
     """
     playwright = sync_playwright().start()
-    browser = playwright.chromium.launch(headless=False)
+    browser = playwright.chromium.launch(headless=True)
     context = browser.new_context()
     page = context.new_page()
 
