@@ -2,13 +2,10 @@
 
 import datetime
 import time
-from threading import Lock
-from typing import Any, Dict
-from uuid import uuid4
 
 import requests
 from fastapi import APIRouter, HTTPException
-from playwright.sync_api import Browser, Page, Playwright, expect, sync_playwright
+from playwright.sync_api import Browser, Page, Playwright
 
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects import service as project_service
@@ -22,10 +19,6 @@ from src.adapters.vesync.projects.utils import get_role_members
 
 router = APIRouter(prefix="/projects")
 
-# In-memory store for Playwright sessions
-_sessions: Dict[str, Dict[str, Any]] = {}
-_sessions_lock = Lock()
-
 
 @router.post("/login")
 def signin_pm(request: PmLoginRequest):
@@ -34,58 +27,7 @@ def signin_pm(request: PmLoginRequest):
     :param request: PmLoginRequest containing username and password.
     :raises HTTPException: If login fails or MFA is required.
     """
-    playwright = sync_playwright().start()
-    browser = playwright.chromium.launch(headless=True)
-    context = browser.new_context()
-    page = context.new_page()
-
-    # Navigate to PM login page.
-    page.goto(project_constants.VesyncService.PM_FRONTEND_ORIGIN)
-
-    # Input username and password.
-    page.get_by_role("textbox", name="请输入邮箱前缀或邮箱地址").fill(request.username)
-    page.get_by_role("textbox", name="请输入密码").fill(request.password)
-    page.get_by_role("button", name="登 录").click()
-
-    # Wait for either successful login or MFA form.
-    homepage_title = page.get_by_text("PM系统")
-    opt_input = page.get_by_role("textbox", name="请输入6位验证码")
-    expect(homepage_title.or_(opt_input).first).to_be_visible()
-
-    # MFA required, return session ID for OTP entry.
-    if opt_input.is_visible():
-        session_id = str(uuid4())
-        with _sessions_lock:
-            _sessions[session_id] = {
-                "playwright": playwright,
-                "browser": browser,
-                "context": context,
-                "page": page,
-            }
-
-        # Cache session and do not close browser, waiting for OTP.
-        return {"status": "need_otp", "session_id": session_id}
-
-    # Successful login, ensure navigation has fully loaded.
-    page.wait_for_url("**/my-place")
-
-    TOKEN_ATTEMPTS = 10
-    TOKEN_INTERVAL = 0.5
-    token = None
-    for _ in range(TOKEN_ATTEMPTS):
-        token = page.evaluate("() => window.localStorage.getItem('userLogin')")
-        if token:
-            break
-        time.sleep(TOKEN_INTERVAL)
-    if not token:
-        raise HTTPException(
-            status_code=500, detail="Timeout waiting for userLogin token"
-        )
-
-    # Close browser and playwright session before returning token.
-    browser.close()
-    playwright.stop()
-    return {"status": "success", "token": token}
+    project_service.auth_by_user_password(request.username, request.password)
 
 
 @router.post("/otp")
