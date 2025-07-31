@@ -11,39 +11,39 @@ from src.users.models import User, UserCreate
 from src.utils import load_env
 
 router = APIRouter(
-    tags=["tokens"],
+    tags=["users"],
 )
 
 # Load environment variables
 load_env()
 
 
-@router.post("/tokens")
-def save_token(
-    token_in: UserCreate,
+@router.post("/users")
+def save_user(
+    user_in: UserCreate,
     session: SessionDep,
 ):
-    """Save access and refresh tokens."""
-    token_db = User.model_validate(token_in)
+    """Save user information."""
+    user_db = User.model_validate(user_in)
 
-    session.add(token_db)
+    session.add(user_db)
     session.commit()
-    session.refresh(token_db)
-    logger.info(f"Token saved successfully: token_id={token_db.id}")
-    return {"message": "Token saved successfully", "token_id": token_db.id}
+    session.refresh(user_db)
+    logger.info(f"User saved successfully: user_id={user_db.id}")
+    return {"message": "User saved successfully", "user_id": user_db.id}
 
 
-@router.patch("/tokens/{token_id}")
+@router.patch("/users/{user_id}/token")
 def refresh_access_token(
-    token_id: int,
+    user_id: int,
     session: SessionDep,
 ) -> User:
     """Refresh access token using Microsoft's OAuth API."""
-    # Query the token from the database.
-    token_db = session.get(User, token_id)
+    # Query the user from the database.
+    user_db = session.get(User, user_id)
 
-    if not token_db:
-        raise HTTPException(status_code=404, detail="Token not found")
+    if not user_db:
+        raise HTTPException(status_code=404, detail="User not found")
 
     # Get client ID and secret from environment variables.
     client_id = os.getenv("AZURE_AD_CLIENT_ID")
@@ -59,7 +59,7 @@ def refresh_access_token(
     oauth_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
     payload = {
         "grant_type": "refresh_token",
-        "refresh_token": token_db.refresh_token,
+        "refresh_token": user_db.refresh_token,
         "client_id": client_id,
         "client_secret": client_secret,
         "scope": "https://graph.microsoft.com/.default",
@@ -76,24 +76,24 @@ def refresh_access_token(
     response_data = response.json()
 
     # Update the token in the database.
-    token_db.sqlmodel_update(
+    user_db.sqlmodel_update(
         {
             "access_token": response_data["access_token"],
-            "refresh_token": response_data.get("refresh_token", token_db.refresh_token),
+            "refresh_token": response_data.get("refresh_token", user_db.refresh_token),
             "expires_at": datetime.datetime.now().timestamp()
             + response_data["expires_in"],
         }
     )
 
-    session.add(token_db)
+    session.add(user_db)
     session.commit()
-    session.refresh(token_db)
+    session.refresh(user_db)
 
-    return token_db
+    return user_db
 
 
-@router.get("/tokens")
-def list_tokens(session: SessionDep):
-    """Retrieve a list of all tokens."""
-    tokens = session.exec(select(User)).all()
-    return tokens
+@router.get("/users")
+def list_users(session: SessionDep):
+    """Retrieve a list of all users."""
+    users = session.exec(select(User)).all()
+    return users
