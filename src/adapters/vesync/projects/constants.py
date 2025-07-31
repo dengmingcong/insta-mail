@@ -1,7 +1,5 @@
 """Module specific constants and error codes."""
 
-from selenium.webdriver.common.by import By
-
 # PM frontend origin URL, which user input in browser.
 PM_FRONTEND_ORIGIN: str = "https://pm.vesync.co/"
 
@@ -30,7 +28,9 @@ class LoginPageLocators:
     USERNAME_INPUT: dict = {"role": "textbox", "name": "请输入邮箱前缀或邮箱地址"}
     PASSWORD_INPUT: dict = {"role": "textbox", "name": "请输入密码"}
     LOG_IN_BUTTON: dict = {"role": "button", "name": "登 录"}
+    OTP_INPUT: dict = {"role": "textbox", "name": "请输入6位验证码"}
+    OTP_BUTTON: dict = {"role": "button", "name": "验 证"}
 
 
 class MainPageLocators:
-    ACTIVE_TAB = (By.CSS_SELECTOR, ".el-menu-item.is-active")
+    TITLE: dict = {"text": "PM系统"}
