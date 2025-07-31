@@ -7,7 +7,7 @@ from fastapi.logger import logger
 from sqlmodel import select
 
 from src.database import SessionDep
-from src.tokens.models import Token, TokenCreate
+from src.users.models import User, UserCreate
 from src.utils import load_env
 
 router = APIRouter(
@@ -20,11 +20,11 @@ load_env()
 
 @router.post("/tokens")
 def save_token(
-    token_in: TokenCreate,
+    token_in: UserCreate,
     session: SessionDep,
 ):
     """Save access and refresh tokens."""
-    token_db = Token.model_validate(token_in)
+    token_db = User.model_validate(token_in)
 
     session.add(token_db)
     session.commit()
@@ -37,10 +37,10 @@ def save_token(
 def refresh_access_token(
     token_id: int,
     session: SessionDep,
-) -> Token:
+) -> User:
     """Refresh access token using Microsoft's OAuth API."""
     # Query the token from the database.
-    token_db = session.get(Token, token_id)
+    token_db = session.get(User, token_id)
 
     if not token_db:
         raise HTTPException(status_code=404, detail="Token not found")
@@ -95,5 +95,5 @@ def refresh_access_token(
 @router.get("/tokens")
 def list_tokens(session: SessionDep):
     """Retrieve a list of all tokens."""
-    tokens = session.exec(select(Token)).all()
+    tokens = session.exec(select(User)).all()
     return tokens
