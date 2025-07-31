@@ -94,7 +94,9 @@ def refresh_access_token(
 
 
 @router.get("/")
-def list_users(session: SessionDep):
-    """Retrieve a list of all users."""
-    users = session.exec(select(User)).all()
-    return users
+def list_users(session: SessionDep, email: str | None = None):
+    """List all users or filter by email."""
+    if email:
+        return session.exec(select(User).where(User.email == email)).all()
+
+    return session.exec(select(User)).all()
