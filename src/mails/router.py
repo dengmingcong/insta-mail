@@ -12,8 +12,8 @@ from src.adapters.vesync.projects.router import read_project
 from src.adapters.vesync.projects.schemas import PMProject
 from src.database import SessionDep
 from src.mails.models import Mail, MailCreate, MailPublic, MailPublicReadyToBeSent
-from src.tokens.models import Token
-from src.tokens.router import refresh_access_token
+from src.users.models import User
+from src.users.router import refresh_access_token
 
 router = APIRouter(
     tags=["mails"],
@@ -122,19 +122,19 @@ async def test_mail(
     :param email: The email to send the preview to.
     :param session: The database session.
     """
-    # Get the access token from the database.
-    token: Token = session.exec(select(Token).where(Token.email == to)).first()
+    # Get access token of the user from the database.
+    user: User = session.exec(select(User).where(User.email == to)).first()
 
-    # If the token is not found, raise an error.
-    if not token:
+    # If the user is not found, raise an error.
+    if not user:
         raise HTTPException(
             status_code=404,
-            detail="Token not found. Please login to get a new token.",
+            detail="User not found. Please login to get a new token.",
         )
 
-    # If the token is expired or will expire in less than 5 minutes, refresh it.
-    if token.expires_at < datetime.datetime.now().timestamp() + 300:
-        token = refresh_access_token(token.id, session)
+    # If the user's token is expired or will expire in less than 5 minutes, refresh it.
+    if user.expires_at < datetime.datetime.now().timestamp() + 300:
+        user = refresh_access_token(user.id, session)
 
     # Get email content.
     mail: MailPublicReadyToBeSent = await read_mail(id, session)
@@ -142,7 +142,7 @@ async def test_mail(
     # Send the mail to the email address via microsoft graph API.
     url = "https://graph.microsoft.com/v1.0/me/sendMail"
     headers = {
-        "Authorization": f"Bearer {token.access_token}",
+        "Authorization": f"Bearer {user.access_token}",
         "Content-Type": "application/json",
     }
     body = {
