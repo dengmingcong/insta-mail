@@ -97,6 +97,6 @@ def refresh_access_token(
 def list_users(session: SessionDep, email: str | None = None):
     """List all users or filter by email."""
     if email:
-        return session.exec(select(User).where(User.email == email)).all()
+        return session.exec(select(User).where(User.email == email)).one_or_none()
 
     return session.exec(select(User)).all()
