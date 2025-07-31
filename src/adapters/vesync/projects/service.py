@@ -6,14 +6,14 @@ from typing import Any, Dict, Union
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException
-from playwright.sync_api import Page, expect, sync_playwright
+from playwright.sync_api import Browser, Page, Playwright, expect, sync_playwright
 
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects.exceptions import ValueNotFoundInLocalStorageError
 
 router = APIRouter(prefix="/projects")
 
-# In-memory store for Playwright sessions
+# In-memory store for Playwright sessions.
 _sessions: Dict[str, Dict[str, Any]] = {}
 _sessions_lock = Lock()
 
@@ -96,4 +96,46 @@ def auth_by_user_password(username: str, password: str):
     # Close browser and playwright session before returning token.
     browser.close()
     playwright.stop()
+    return {"status": "success", "token": token}
+
+
+def enter_otp(session_id: str, otp: str):
+    """Enter OTP for 2FA using Playwright.
+
+    :param session_id: The session ID for the Playwright session.
+    :param otp: The OTP (One-Time Password) to enter.
+    :raises HTTPException: If session not found or OTP entry fails.
+    """
+    with _sessions_lock:
+        session = _sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    playwright: Playwright = session["playwright"]
+    browser: Browser = session["browser"]
+    page: Page = session["page"]
+
+    # Fill in the OTP and submit.
+    page.get_by_role(**project_constants.LoginPageLocators.OTP_INPUT).fill(otp)
+    page.get_by_role(**project_constants.LoginPageLocators.SUBMIT_BUTTON).click()
+
+    # Wait for successful login.
+    page.wait_for_url("**/my-place")
+
+    try:
+        token = read_local_storage(page, "userLogin")
+    except ValueNotFoundInLocalStorageError:
+        browser.close()
+        playwright.stop()
+        with _sessions_lock:
+            del _sessions[session_id]
+        raise HTTPException(
+            status_code=500, detail="Timeout waiting for userLogin token"
+        )
+
+    # Close browser and return token.
+    browser.close()
+    playwright.stop()
+    with _sessions_lock:
+        del _sessions[session_id]
     return {"status": "success", "token": token}

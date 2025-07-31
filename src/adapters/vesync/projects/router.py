@@ -1,11 +1,9 @@
 """Core of projects with all the endpoints."""
 
 import datetime
-import time
 
 import requests
-from fastapi import APIRouter, HTTPException
-from playwright.sync_api import Browser, Page, Playwright
+from fastapi import APIRouter
 
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects import service as project_service
@@ -36,49 +34,7 @@ def enter_otp(request: PmOtpRequest):
 
     :param request: PmOtpRequest containing session ID and OTP.
     """
-    # Get session from in-memory store.
-    with _sessions_lock:
-        session = _sessions.get(request.session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-
-    playwright: Playwright = session["playwright"]
-    browser: Browser = session["browser"]
-    page: Page = session["page"]
-
-    # Fill in the OTP and submit.
-    page.get_by_role("textbox", name="请输入6位验证码").fill(request.otp)
-    page.get_by_role("button", name="验 证").click()
-
-    # Wait for successful login.
-    page.wait_for_url("**/my-place")
-
-    # Poll for userLogin in localStorage.
-    TOKEN_ATTEMPTS = 10
-    TOKEN_INTERVAL = 0.5
-    token = None
-    for _ in range(TOKEN_ATTEMPTS):
-        token = page.evaluate("() => window.localStorage.getItem('userLogin')")
-        if token:
-            break
-        time.sleep(TOKEN_INTERVAL)
-
-    # If token is not found, close browser and raise exception.
-    if not token:
-        browser.close()
-        playwright.stop()
-        with _sessions_lock:
-            del _sessions[request.session_id]
-        raise HTTPException(
-            status_code=500, detail="Timeout waiting for userLogin token"
-        )
-
-    # If token is found, close browser and return token.
-    browser.close()
-    playwright.stop()
-    with _sessions_lock:
-        del _sessions[request.session_id]
-    return {"status": "success", "token": token}
+    project_service.enter_otp(session_id=request.session_id, otp=request.otp)
 
 
 @router.get("/")
