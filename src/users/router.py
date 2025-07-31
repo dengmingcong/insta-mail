@@ -12,13 +12,14 @@ from src.utils import load_env
 
 router = APIRouter(
     tags=["users"],
+    prefix="/users",
 )
 
 # Load environment variables
 load_env()
 
 
-@router.post("/users")
+@router.post("/")
 def save_user(
     user_in: UserCreate,
     session: SessionDep,
@@ -33,7 +34,7 @@ def save_user(
     return {"message": "User saved successfully", "user_id": user_db.id}
 
 
-@router.patch("/users/{user_id}/token")
+@router.patch("/{user_id}/token")
 def refresh_access_token(
     user_id: int,
     session: SessionDep,
@@ -92,7 +93,7 @@ def refresh_access_token(
     return user_db
 
 
-@router.get("/users")
+@router.get("/")
 def list_users(session: SessionDep):
     """Retrieve a list of all users."""
     users = session.exec(select(User)).all()
