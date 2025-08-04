@@ -12,6 +12,15 @@ class UserCreate(SQLModel):
     expires_at: int  # Timestamp in seconds.
 
 
+class UserUpdate(SQLModel):
+    """Information required to update a user."""
+
+    email: str | None = None
+    access_token: str | None = None
+    refresh_token: str | None = None
+    expires_at: int | None = None
+
+
 class User(UserCreate, table=True):
     """Represents a user in the system."""
 

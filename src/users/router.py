@@ -7,7 +7,7 @@ from fastapi.logger import logger
 from sqlmodel import select
 
 from src.database import SessionDep
-from src.users.models import User, UserCreate
+from src.users.models import User, UserCreate, UserUpdate
 from src.utils import load_env
 
 router = APIRouter(
@@ -32,6 +32,27 @@ def save_user(
     session.refresh(user_db)
     logger.info(f"User saved successfully: user_id={user_db.id}")
     return {"message": "User saved successfully", "user_id": user_db.id}
+
+
+@router.patch("/{user_id}")
+def update_user(
+    user_id: int,
+    user: UserUpdate,
+    session: SessionDep,
+):
+    """Update user information."""
+    user_db = session.get(User, user_id)
+
+    if not user_db:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Update fields if provided.
+    user_data = user.model_dump(exclude_unset=True)
+    user_db.sqlmodel_update(user_data)
+    session.add(user_db)
+    session.commit()
+    session.refresh(user_db)
+    return user_db
 
 
 @router.patch("/{user_id}/token")
