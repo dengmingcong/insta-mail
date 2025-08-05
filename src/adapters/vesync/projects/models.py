@@ -1,9 +1,16 @@
+from typing import Literal
+
 from sqlmodel import SQLModel
 
 
 class UserCreate(SQLModel):
     username: str
     password: str
+
+
+class UserPasswordAuthResult(SQLModel):
+    status: Literal["SUCCESS", "NEED_OTP"]
+    session_id: str | None = None
 
 
 class PmOtpRequest(SQLModel):

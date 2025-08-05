@@ -10,7 +10,7 @@ from playwright.sync_api import Browser, Page, Playwright, expect, sync_playwrig
 
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects.exceptions import ValueNotFoundInLocalStorageError
-from src.adapters.vesync.projects.models import UserCreate
+from src.adapters.vesync.projects.models import UserCreate, UserPasswordAuthResult
 
 router = APIRouter(prefix="/projects")
 
@@ -19,7 +19,7 @@ _sessions: Dict[str, Dict[str, Any]] = {}
 _sessions_lock = Lock()
 
 
-def read_local_storage(
+def _read_local_storage(
     page: Page, key: str, retry_times: int = 10, retry_interval: Union[int, float] = 0.5
 ) -> str:
     """Read a value from local storage with retries.
@@ -42,11 +42,10 @@ def read_local_storage(
     )
 
 
-def auth_by_user_password(user_in: UserCreate):
+def auth_by_user_password(user_in: UserCreate) -> UserPasswordAuthResult:
     """Authenticate user with username and password using Playwright.
 
-    :param username: Username for login.
-    :param password: Password for login.
+    :param user_in: UserCreate containing username and password.
     """
     playwright = sync_playwright().start()
     browser = playwright.chromium.launch(headless=True)
@@ -82,13 +81,16 @@ def auth_by_user_password(user_in: UserCreate):
             }
 
         # Cache session and do not close browser, waiting for OTP.
-        return {"status": "need_otp", "session_id": session_id}
+        return UserPasswordAuthResult(
+            status="NEED_OTP",
+            session_id=session_id,
+        )
 
     # Successful login, ensure navigation has fully loaded.
     page.wait_for_url("**/my-place")
 
     try:
-        token = read_local_storage(page, "userLogin")
+        token = _read_local_storage(page, "userLogin")
     except ValueNotFoundInLocalStorageError:
         raise HTTPException(
             status_code=500, detail="Timeout waiting for userLogin token."
@@ -97,7 +99,7 @@ def auth_by_user_password(user_in: UserCreate):
     # Close browser and playwright session before returning token.
     browser.close()
     playwright.stop()
-    return {"status": "success", "token": token}
+    return UserPasswordAuthResult(status="SUCCESS")
 
 
 def enter_otp(session_id: str, otp: str):
@@ -124,7 +126,7 @@ def enter_otp(session_id: str, otp: str):
     page.wait_for_url("**/my-place")
 
     try:
-        token = read_local_storage(page, "userLogin")
+        token = _read_local_storage(page, "userLogin")
     except ValueNotFoundInLocalStorageError:
         browser.close()
         playwright.stop()
