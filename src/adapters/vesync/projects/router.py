@@ -19,13 +19,13 @@ router = APIRouter(prefix="/projects")
 
 
 @router.post("/login")
-def signin_pm(request: UserCreate):
+def signin_pm(user_in: UserCreate):
     """Signin PM using Playwright.
 
-    :param request: UserCreate containing username and password.
+    :param user_in: UserCreate containing username and password.
     :raises HTTPException: If login fails or MFA is required.
     """
-    project_service.auth_by_user_password(request.username, request.password)
+    project_service.auth_by_user_password(user_in)
 
 
 @router.post("/otp")

@@ -10,6 +10,7 @@ from playwright.sync_api import Browser, Page, Playwright, expect, sync_playwrig
 
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects.exceptions import ValueNotFoundInLocalStorageError
+from src.adapters.vesync.projects.models import UserCreate
 
 router = APIRouter(prefix="/projects")
 
@@ -41,7 +42,7 @@ def read_local_storage(
     )
 
 
-def auth_by_user_password(username: str, password: str):
+def auth_by_user_password(user_in: UserCreate):
     """Authenticate user with username and password using Playwright.
 
     :param username: Username for login.
@@ -57,10 +58,10 @@ def auth_by_user_password(username: str, password: str):
 
     # Input username and password.
     page.get_by_role(**project_constants.LoginPageLocators.USERNAME_INPUT).fill(
-        username
+        user_in.username
     )
     page.get_by_role(**project_constants.LoginPageLocators.PASSWORD_INPUT).fill(
-        password
+        user_in.password
     )
     page.get_by_role(**project_constants.LoginPageLocators.LOG_IN_BUTTON).click()
 
