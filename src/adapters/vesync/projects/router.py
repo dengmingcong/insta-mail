@@ -11,7 +11,7 @@ from src.adapters.vesync.projects.models import (
     PmOtpRequest,
     PMProject,
     PMProjectLocator,
-    UserCreate,
+    PmUserCreate,
     UserPasswordAuthResult,
 )
 from src.adapters.vesync.projects.utils import get_role_members
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/projects")
 
 
 @router.post("/login")
-def signin_pm(user_in: UserCreate) -> UserPasswordAuthResult:
+def signin_pm(user_in: PmUserCreate) -> UserPasswordAuthResult:
     """Signin PM using Playwright.
 
     :param user_in: UserCreate containing username and password.
