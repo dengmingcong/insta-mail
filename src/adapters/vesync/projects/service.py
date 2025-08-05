@@ -1,5 +1,6 @@
 """Module specific business logic."""
 
+import json
 import time
 from threading import Lock
 from typing import Any, Dict, Union
@@ -10,7 +11,11 @@ from playwright.sync_api import Browser, Page, Playwright, expect, sync_playwrig
 
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects.exceptions import ValueNotFoundInLocalStorageError
-from src.adapters.vesync.projects.models import PmUserCreate, UserPasswordAuthResult
+from src.adapters.vesync.projects.models import (
+    PmUserCreate,
+    UserPasswordAuthNeedOtpResult,
+    UserPasswordAuthSuccessResult,
+)
 
 router = APIRouter(prefix="/projects")
 
@@ -42,7 +47,9 @@ def _read_local_storage(
     )
 
 
-def auth_by_user_password(user_in: PmUserCreate) -> UserPasswordAuthResult:
+def auth_by_user_password(
+    user_in: PmUserCreate,
+) -> UserPasswordAuthNeedOtpResult | UserPasswordAuthSuccessResult:
     """Authenticate user with username and password using Playwright.
 
     :param user_in: UserCreate containing username and password.
@@ -81,16 +88,14 @@ def auth_by_user_password(user_in: PmUserCreate) -> UserPasswordAuthResult:
             }
 
         # Cache session and do not close browser, waiting for OTP.
-        return UserPasswordAuthResult(
-            status="NEED_OTP",
-            session_id=session_id,
-        )
+        return UserPasswordAuthNeedOtpResult(session_id=session_id)
 
     # Successful login, ensure navigation has fully loaded.
     page.wait_for_url("**/my-place")
 
     try:
-        token = _read_local_storage(page, "userLogin")
+        raw_token_info: str = _read_local_storage(page, "userLogin")
+        token_info: dict = json.loads(raw_token_info)
     except ValueNotFoundInLocalStorageError:
         raise HTTPException(
             status_code=500, detail="Timeout waiting for userLogin token."
@@ -99,7 +104,11 @@ def auth_by_user_password(user_in: PmUserCreate) -> UserPasswordAuthResult:
     # Close browser and playwright session before returning token.
     browser.close()
     playwright.stop()
-    return UserPasswordAuthResult(status="SUCCESS")
+    return UserPasswordAuthSuccessResult(
+        account_id=token_info["accountId"],
+        access_token=token_info["token"],
+        expires_at=token_info["expiredTimestamp"] / 1000,
+    )
 
 
 def enter_otp(session_id: str, otp: str):

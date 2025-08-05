@@ -11,22 +11,39 @@ from src.adapters.vesync.projects.models import (
     PmOtpRequest,
     PMProject,
     PMProjectLocator,
+    PmUser,
     PmUserCreate,
-    UserPasswordAuthResult,
+    PmUserPublic,
+    UserPasswordAuthNeedOtpResult,
 )
 from src.adapters.vesync.projects.utils import get_role_members
+from src.database import SessionDep
 
 router = APIRouter(prefix="/projects")
 
 
 @router.post("/login")
-def signin_pm(user_in: PmUserCreate) -> UserPasswordAuthResult:
+def signin_pm(
+    user_in: PmUserCreate, session: SessionDep
+) -> UserPasswordAuthNeedOtpResult | PmUserPublic:
     """Signin PM using Playwright.
 
     :param user_in: UserCreate containing username and password.
     :raises HTTPException: If login fails or MFA is required.
     """
-    return project_service.auth_by_user_password(user_in)
+    result = project_service.auth_by_user_password(user_in)
+
+    # If MFA is required, return session ID for OTP entry.
+    if isinstance(result, UserPasswordAuthNeedOtpResult):
+        return result
+
+    # If login is successful, save user in the database.
+    user_db = PmUser.model_validate(result)
+    session.add(user_db)
+    session.commit()
+    session.refresh(user_db)
+
+    return PmUserPublic(username=user_db.username, id=user_db.id)  # type: ignore
 
 
 @router.post("/otp")
