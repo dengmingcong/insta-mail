@@ -9,7 +9,7 @@ from jinja2 import Environment, PackageLoader
 from sqlmodel import select
 
 from src.adapters.vesync.projects.router import read_project
-from src.adapters.vesync.projects.schemas import PMProject
+from src.adapters.vesync.projects.models import PMProject
 from src.database import SessionDep
 from src.mails.models import Mail, MailCreate, MailPublic, MailPublicReadyToBeSent
 from src.users.models import User

@@ -7,11 +7,11 @@ from fastapi import APIRouter
 
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects import service as project_service
-from src.adapters.vesync.projects.schemas import (
-    PmLoginRequest,
+from src.adapters.vesync.projects.models import (
     PmOtpRequest,
     PMProject,
     PMProjectLocator,
+    UserCreate,
 )
 from src.adapters.vesync.projects.utils import get_role_members
 
@@ -19,10 +19,10 @@ router = APIRouter(prefix="/projects")
 
 
 @router.post("/login")
-def signin_pm(request: PmLoginRequest):
+def signin_pm(request: UserCreate):
     """Signin PM using Playwright.
 
-    :param request: PmLoginRequest containing username and password.
+    :param request: UserCreate containing username and password.
     :raises HTTPException: If login fails or MFA is required.
     """
     project_service.auth_by_user_password(request.username, request.password)
