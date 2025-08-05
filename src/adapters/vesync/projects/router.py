@@ -47,12 +47,20 @@ def signin_pm(
 
 
 @router.post("/otp")
-def enter_otp(request: PmOtpRequest):
+def enter_otp(request: PmOtpRequest, session: SessionDep) -> PmUserPublic:
     """Enter OTP for MFA.
 
     :param request: PmOtpRequest containing session ID and OTP.
+    :param session: Database session for saving user.
     """
-    project_service.enter_otp(session_id=request.session_id, otp=request.otp)
+    result = project_service.enter_otp(request)
+
+    user_db = PmUser.model_validate(result)
+    session.add(user_db)
+    session.commit()
+    session.refresh(user_db)
+
+    return PmUserPublic(username=user_db.username, id=user_db.id)  # type: ignore
 
 
 @router.get("/")

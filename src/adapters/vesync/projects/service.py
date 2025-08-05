@@ -12,6 +12,7 @@ from playwright.sync_api import Browser, Page, Playwright, expect, sync_playwrig
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects.exceptions import ValueNotFoundInLocalStorageError
 from src.adapters.vesync.projects.models import (
+    PmOtpRequest,
     PmUserCreate,
     UserPasswordAuthNeedOtpResult,
     UserPasswordAuthSuccessResult,
@@ -111,15 +112,14 @@ def auth_by_user_password(
     )
 
 
-def enter_otp(session_id: str, otp: str):
+def enter_otp(otp_request: PmOtpRequest) -> UserPasswordAuthSuccessResult:
     """Enter OTP for 2FA using Playwright.
 
-    :param session_id: The session ID for the Playwright session.
-    :param otp: The OTP (One-Time Password) to enter.
+    :param otp_request: PmOtpRequest containing session ID and OTP.
     :raises HTTPException: If session not found or OTP entry fails.
     """
     with _sessions_lock:
-        session = _sessions.get(session_id)
+        session = _sessions.get(otp_request.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -128,19 +128,22 @@ def enter_otp(session_id: str, otp: str):
     page: Page = session["page"]
 
     # Fill in the OTP and submit.
-    page.get_by_role(**project_constants.LoginPageLocators.OTP_INPUT).fill(otp)
-    page.get_by_role(**project_constants.LoginPageLocators.SUBMIT_BUTTON).click()
+    page.get_by_role(**project_constants.LoginPageLocators.OTP_INPUT).fill(
+        otp_request.otp
+    )
+    page.get_by_role(**project_constants.LoginPageLocators.OTP_BUTTON).click()
 
     # Wait for successful login.
     page.wait_for_url("**/my-place")
 
     try:
-        token = _read_local_storage(page, "userLogin")
+        raw_token_info: str = _read_local_storage(page, "userLogin")
+        token_info: dict = json.loads(raw_token_info)
     except ValueNotFoundInLocalStorageError:
         browser.close()
         playwright.stop()
         with _sessions_lock:
-            del _sessions[session_id]
+            del _sessions[otp_request.session_id]
         raise HTTPException(
             status_code=500, detail="Timeout waiting for userLogin token"
         )
@@ -149,5 +152,9 @@ def enter_otp(session_id: str, otp: str):
     browser.close()
     playwright.stop()
     with _sessions_lock:
-        del _sessions[session_id]
-    return {"status": "success", "token": token}
+        del _sessions[otp_request.session_id]
+    return UserPasswordAuthSuccessResult(
+        account_id=token_info["accountId"],
+        access_token=token_info["token"],
+        expires_at=token_info["expiredTimestamp"] / 1000,
+    )
