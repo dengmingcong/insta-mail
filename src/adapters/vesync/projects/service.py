@@ -12,8 +12,8 @@ from playwright.sync_api import Browser, Page, Playwright, expect, sync_playwrig
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects.exceptions import ValueNotFoundInLocalStorageError
 from src.adapters.vesync.projects.models import (
-    PmOtpRequest,
     PmUserCreate,
+    UserOtp,
     UserPasswordAuthNeedOtpResult,
     UserPasswordAuthSuccessResult,
 )
@@ -112,7 +112,7 @@ def auth_by_user_password(
     )
 
 
-def enter_otp(otp_request: PmOtpRequest) -> UserPasswordAuthSuccessResult:
+def enter_otp(otp_request: UserOtp) -> UserPasswordAuthSuccessResult:
     """Enter OTP for 2FA using Playwright.
 
     :param otp_request: PmOtpRequest containing session ID and OTP.

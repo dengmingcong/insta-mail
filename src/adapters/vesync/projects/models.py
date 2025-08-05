@@ -50,7 +50,7 @@ class PmUserPublic(PmUserBase):
     id: int
 
 
-class PmOtpRequest(SQLModel):
+class UserOtp(PmUserBase):
     session_id: str
     otp: str
 

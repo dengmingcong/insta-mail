@@ -8,12 +8,12 @@ from fastapi import APIRouter
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects import service as project_service
 from src.adapters.vesync.projects.models import (
-    PmOtpRequest,
     PMProject,
     PMProjectLocator,
     PmUser,
     PmUserCreate,
     PmUserPublic,
+    UserOtp,
     UserPasswordAuthNeedOtpResult,
 )
 from src.adapters.vesync.projects.utils import get_role_members
@@ -38,7 +38,12 @@ def signin_pm(
         return result
 
     # If login is successful, save user in the database.
-    user_db = PmUser.model_validate(result)
+    user_db = PmUser(
+        username=user_in.username,
+        account_id=result.account_id,
+        access_token=result.access_token,
+        expires_at=result.expires_at,
+    )
     session.add(user_db)
     session.commit()
     session.refresh(user_db)
@@ -47,20 +52,25 @@ def signin_pm(
 
 
 @router.post("/otp")
-def enter_otp(request: PmOtpRequest, session: SessionDep) -> PmUserPublic:
+def enter_otp(user_otp: UserOtp, session: SessionDep) -> PmUserPublic:
     """Enter OTP for MFA.
 
-    :param request: PmOtpRequest containing session ID and OTP.
+    :param user_otp: UserOtp containing username, session ID, and OTP.
     :param session: Database session for saving user.
     """
-    result = project_service.enter_otp(request)
+    result = project_service.enter_otp(user_otp)
 
-    user_db = PmUser.model_validate(result)
+    user_db = PmUser(
+        username=user_otp.username,
+        account_id=result.account_id,
+        access_token=result.access_token,
+        expires_at=result.expires_at,
+    )
     session.add(user_db)
     session.commit()
     session.refresh(user_db)
 
-    return PmUserPublic(username=user_db.username, id=user_db.id)  # type: ignore
+    return PmUserPublic(username=user_otp.username, id=user_db.id)  # type: ignore
 
 
 @router.get("/")
