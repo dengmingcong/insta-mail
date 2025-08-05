@@ -35,7 +35,7 @@ class UserPasswordAuthSuccessResult(SQLModel):
 
     account_id: str
     access_token: str
-    expires_at: int  # Unix timestamp in seconds
+    expires_at: float  # Unix timestamp in seconds
 
 
 class PmUser(PmUserBase, UserPasswordAuthSuccessResult, table=True):
