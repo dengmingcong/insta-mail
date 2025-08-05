@@ -1,24 +1,24 @@
-from pydantic import BaseModel
+from sqlmodel import SQLModel
 
 
-class UserCreate(BaseModel):
+class UserCreate(SQLModel):
     username: str
     password: str
 
 
-class PmOtpRequest(BaseModel):
+class PmOtpRequest(SQLModel):
     session_id: str
     otp: str
 
 
-class PMProjectLocator(BaseModel):
+class PMProjectLocator(SQLModel):
     """Pydantic model for locating a PM project."""
 
     id: int
     title: str
 
 
-class PMProject(BaseModel):
+class PMProject(SQLModel):
     """Pydantic model for PM project details."""
 
     project_managers: list[str]
