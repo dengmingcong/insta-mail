@@ -22,7 +22,7 @@ class NoFreshUserError(HTTPException):
 
     def __init__(
         self,
-        detail: str = "Authentication token expired or not found. Please login again.",
+        detail: str = "PM authentication token expired or not found. Please login again.",
     ):
         super().__init__(
             status_code=status.HTTP_401_UNAUTHORIZED,
