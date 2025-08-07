@@ -12,10 +12,10 @@ from playwright.sync_api import Browser, Page, Playwright, expect, sync_playwrig
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects.exceptions import ValueNotFoundInLocalStorageError
 from src.adapters.vesync.projects.models import (
+    AuthSuccessResult,
     PmUserCreate,
     UserOtp,
     UserPasswordAuthNeedOtpResult,
-    UserPasswordAuthSuccessResult,
 )
 
 router = APIRouter(prefix="/projects")
@@ -50,7 +50,7 @@ def _read_local_storage(
 
 def auth_by_user_password(
     user_in: PmUserCreate,
-) -> UserPasswordAuthNeedOtpResult | UserPasswordAuthSuccessResult:
+) -> UserPasswordAuthNeedOtpResult | AuthSuccessResult:
     """Authenticate user with username and password using Playwright.
 
     :param user_in: UserCreate containing username and password.
@@ -105,14 +105,14 @@ def auth_by_user_password(
     # Close browser and playwright session before returning token.
     browser.close()
     playwright.stop()
-    return UserPasswordAuthSuccessResult(
+    return AuthSuccessResult(
         account_id=token_info["accountId"],
         access_token=token_info["token"],
         expires_at=token_info["expiredTimestamp"] / 1000,
     )
 
 
-def enter_otp(otp_request: UserOtp) -> UserPasswordAuthSuccessResult:
+def enter_otp(otp_request: UserOtp) -> AuthSuccessResult:
     """Enter OTP for 2FA using Playwright.
 
     :param otp_request: PmOtpRequest containing session ID and OTP.
@@ -153,7 +153,7 @@ def enter_otp(otp_request: UserOtp) -> UserPasswordAuthSuccessResult:
     playwright.stop()
     with _sessions_lock:
         del _sessions[otp_request.session_id]
-    return UserPasswordAuthSuccessResult(
+    return AuthSuccessResult(
         account_id=token_info["accountId"],
         access_token=token_info["token"],
         expires_at=token_info["expiredTimestamp"] / 1000,

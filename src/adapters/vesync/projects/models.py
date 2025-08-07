@@ -38,8 +38,8 @@ class UserPasswordAuthNeedOtpResult(SQLModel):
     session_id: str
 
 
-class UserPasswordAuthSuccessResult(SQLModel):
-    """Result of user authentication with username and password that is successful.
+class AuthSuccessResult(SQLModel):
+    """Successful result of user authentication.
 
     :param account_id: ID in the PM system.
     :param access_token: Access token if authentication is successful.
@@ -51,7 +51,7 @@ class UserPasswordAuthSuccessResult(SQLModel):
     expires_at: float  # Unix timestamp in seconds
 
 
-class PmUser(PmUserBase, UserPasswordAuthSuccessResult, table=True):
+class PmUser(PmUserBase, AuthSuccessResult, table=True):
     """An user in PM system."""
 
     id: int | None = Field(default=None, primary_key=True)
