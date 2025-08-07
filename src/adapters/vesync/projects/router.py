@@ -1,15 +1,17 @@
 """Core of projects with all the endpoints."""
 
 import datetime
+from typing import Annotated
 
 import requests
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects import service as project_service
+from src.adapters.vesync.projects.dependencies import get_fresh_user
 from src.adapters.vesync.projects.models import (
     PMProject,
-    PMProjectLocator,
+    PMProjectPublic,
     PmUser,
     PmUserCreate,
     PmUserPublic,
@@ -75,25 +77,26 @@ def enter_otp(user_otp: UserOtp, session: SessionDep) -> PmUserPublic:
 
 @router.get("/")
 async def read_projects(
-    title_like: str | None = None, page_number: int = 1, page_size: int = 50
-) -> list[PMProjectLocator]:
+    fresh_pm_user: Annotated[PmUser, Depends(get_fresh_user)],
+    title_like: str | None = None,
+    page_number: int = 1,
+    page_size: int = 50,
+) -> list[PMProjectPublic]:
     """Query projects by matching the title.
 
+    :param fresh_pm_user: The user with a fresh token.
     :param title_like: Title to match.
     :param page_number: Page number.
     :param page_size: Page size.
     """
-    cookies: dict = project_service.auth_pm()
-
     response = requests.post(
-        project_constants.VesyncService.PM_API_ORIGIN
-        + project_constants.APIPath.SEARCH_PROJECTS,
+        project_constants.PM_API_ORIGIN + project_constants.API_SEARCH_PROJECTS,
         json={
             "context": {
-                **project_constants.VesyncService.API_CONTEXT,
+                **project_constants.PM_API_CONTEXT,
                 "method": "pageProjectSummaryV2",
-                "accountID": cookies["account_id"],
-                "token": cookies["token"],
+                "accountID": fresh_pm_user.account_id,
+                "token": fresh_pm_user.access_token,
                 "traceId": int(datetime.datetime.now().timestamp()),
             },
             "data": {
@@ -109,28 +112,29 @@ async def read_projects(
     )
 
     return [
-        PMProjectLocator(id=project["projectId"], title=project["projectFullName"])
+        PMProjectPublic(id=project["projectId"], title=project["projectFullName"])
         for project in response.json()["result"]["projectList"]
     ]
 
 
 @router.get("/{project_id}")
-async def read_project(project_id: int) -> PMProject:
+async def read_project(
+    project_id: int,
+    fresh_pm_user: Annotated[PmUser, Depends(get_fresh_user)],
+) -> PMProject:
     """Query project details by project ID.
 
     :param project_id: Project ID.
+    :param fresh_pm_user: The user with a fresh token.
     """
-    cookies: dict = project_service.auth_pm()
-
     response = requests.post(
-        project_constants.VesyncService.PM_API_ORIGIN
-        + project_constants.APIPath.GET_PROJECT_MEMBERS,
+        project_constants.PM_API_ORIGIN + project_constants.API_GET_PROJECT_MEMBERS,
         json={
             "context": {
-                **project_constants.VesyncService.API_CONTEXT,
+                **project_constants.PM_API_CONTEXT,
                 "method": "getRelatedProjectMember",
-                "accountID": cookies["account_id"],
-                "token": cookies["token"],
+                "accountID": fresh_pm_user.account_id,
+                "token": fresh_pm_user.access_token,
                 "traceId": int(datetime.datetime.now().timestamp()),
             },
             "data": {"projectId": project_id},
