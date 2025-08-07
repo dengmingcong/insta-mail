@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from pydantic import field_validator
-from sqlmodel import Field, SQLModel
+from sqlmodel import JSON, Column, Field, SQLModel
 
 
 class PmUserBase(SQLModel):
@@ -55,7 +55,7 @@ class AuthSuccessResult(SQLModel):
     organization_tree: dict
 
 
-class PmUser(PmUserBase, able=True):
+class PmUser(PmUserBase, table=True):
     """An user in PM system."""
 
     id: int | None = Field(default=None, primary_key=True)
@@ -106,7 +106,7 @@ class Organization(SQLModel, table=True):
 
     id: int = Field(default=1, primary_key=True)
     name: str = Field(default="vesync")
-    users: list[dict]
-    tree: dict
+    users: list[dict] = Field(sa_column=Column(JSON))
+    tree: dict = Field(sa_column=Column(JSON))
     created_at: datetime | None = Field(default_factory=datetime.now)
     last_updated: datetime | None = Field(default_factory=datetime.now)
