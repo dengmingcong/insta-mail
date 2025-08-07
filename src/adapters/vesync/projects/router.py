@@ -5,13 +5,11 @@ from typing import Annotated
 
 import requests
 from fastapi import APIRouter, Depends
-from sqlmodel import select
 
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects import service as project_service
 from src.adapters.vesync.projects.dependencies import get_fresh_user
 from src.adapters.vesync.projects.models import (
-    Organization,
     PMProject,
     PMProjectPublic,
     PmUser,
@@ -41,52 +39,10 @@ def signin_pm(
     if isinstance(result, UserPasswordAuthNeedOtpResult):
         return result
 
-    # Check if organization already exists in database
-    org_statement = select(Organization).where(Organization.name == "vesync")
-    existing_org = session.exec(org_statement).first()
-
-    if existing_org:
-        # Update existing organization with new data
-        existing_org.users = result.all_users
-        existing_org.tree = result.organization_tree
-        existing_org.last_updated = datetime.datetime.now()
-        session.add(existing_org)
-    else:
-        # Create new organization
-        new_org = Organization(
-            name="vesync",
-            users=result.all_users,
-            tree=result.organization_tree,
-        )
-        session.add(new_org)
-
-    # Check if user already exists in database
-    statement = select(PmUser).where(PmUser.username == user_in.username)
-    existing_user = session.exec(statement).first()
-
-    if existing_user:
-        # Update existing user with new token info
-        existing_user.account_id = result.account_id
-        existing_user.access_token = result.access_token
-        existing_user.expires_at = result.expires_at
-        existing_user.last_updated = datetime.datetime.now()
-        session.add(existing_user)
-        session.commit()
-        session.refresh(existing_user)
-        user_db = existing_user
-    else:
-        # Create new user
-        user_db = PmUser(
-            username=user_in.username,
-            account_id=result.account_id,
-            access_token=result.access_token,
-            expires_at=result.expires_at,
-        )
-        session.add(user_db)
-        session.commit()
-        session.refresh(user_db)
-
-    return PmUserPublic(username=user_db.username, id=user_db.id)  # type: ignore
+    # Save authentication result to database.
+    return project_service.save_auth_result_to_database(
+        result, user_in.username, session
+    )
 
 
 @router.post("/otp")
@@ -98,52 +54,10 @@ def enter_otp(user_otp: UserOtp, session: SessionDep) -> PmUserPublic:
     """
     result = project_service.enter_otp(user_otp)
 
-    # Check if organization already exists in database
-    org_statement = select(Organization).where(Organization.name == "vesync")
-    existing_org = session.exec(org_statement).first()
-
-    if existing_org:
-        # Update existing organization with new data
-        existing_org.users = result.all_users
-        existing_org.tree = result.organization_tree
-        existing_org.last_updated = datetime.datetime.now()
-        session.add(existing_org)
-    else:
-        # Create new organization
-        new_org = Organization(
-            name="vesync",
-            users=result.all_users,
-            tree=result.organization_tree,
-        )
-        session.add(new_org)
-
-    # Check if user already exists in database.
-    statement = select(PmUser).where(PmUser.username == user_otp.username)
-    existing_user = session.exec(statement).first()
-
-    if existing_user:
-        # Update existing user with new token info.
-        existing_user.account_id = result.account_id
-        existing_user.access_token = result.access_token
-        existing_user.expires_at = result.expires_at
-        existing_user.last_updated = datetime.datetime.now()
-        session.add(existing_user)
-        session.commit()
-        session.refresh(existing_user)
-        user_db = existing_user
-    else:
-        # Create new user
-        user_db = PmUser(
-            username=user_otp.username,
-            account_id=result.account_id,
-            access_token=result.access_token,
-            expires_at=result.expires_at,
-        )
-        session.add(user_db)
-        session.commit()
-        session.refresh(user_db)
-
-    return PmUserPublic(username=user_otp.username, id=user_db.id)  # type: ignore
+    # Save authentication result to database.
+    return project_service.save_auth_result_to_database(
+        result, user_otp.username, session
+    )
 
 
 @router.get("/")

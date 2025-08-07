@@ -1,5 +1,6 @@
 """Module specific business logic."""
 
+import datetime
 import json
 import time
 from threading import Lock
@@ -8,12 +9,16 @@ from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException
 from playwright.sync_api import Browser, Page, Playwright, expect, sync_playwright
+from sqlmodel import Session, select
 
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects.exceptions import ValueNotFoundInLocalStorageError
 from src.adapters.vesync.projects.models import (
     AuthSuccessResult,
+    Organization,
+    PmUser,
     PmUserCreate,
+    PmUserPublic,
     UserOtp,
     UserPasswordAuthNeedOtpResult,
 )
@@ -170,3 +175,61 @@ def enter_otp(otp_request: UserOtp) -> AuthSuccessResult:
         all_users=all_users,
         organization_tree=organization_tree,
     )
+
+
+def save_auth_result_to_database(
+    auth_result: AuthSuccessResult, username: str, session: Session
+) -> PmUserPublic:
+    """Save authentication result to database, handling both Organization and User.
+
+    :param auth_result: The successful authentication result containing user and org data.
+    :param username: Username of the authenticated user.
+    :param session: Database session for saving data.
+    :return: Public user information.
+    """
+    # Check if organization already exists in database
+    org_statement = select(Organization).where(Organization.name == "vesync")
+    existing_org = session.exec(org_statement).first()
+
+    if existing_org:
+        # Update existing organization with new data
+        existing_org.users = auth_result.all_users
+        existing_org.tree = auth_result.organization_tree
+        existing_org.last_updated = datetime.datetime.now()
+        session.add(existing_org)
+    else:
+        # Create new organization
+        new_org = Organization(
+            name="vesync",
+            users=auth_result.all_users,
+            tree=auth_result.organization_tree,
+        )
+        session.add(new_org)
+
+    # Check if user already exists in database
+    statement = select(PmUser).where(PmUser.username == username)
+    existing_user = session.exec(statement).first()
+
+    if existing_user:
+        # Update existing user with new token info
+        existing_user.account_id = auth_result.account_id
+        existing_user.access_token = auth_result.access_token
+        existing_user.expires_at = auth_result.expires_at
+        existing_user.last_updated = datetime.datetime.now()
+        session.add(existing_user)
+        session.commit()
+        session.refresh(existing_user)
+        user_db = existing_user
+    else:
+        # Create new user
+        user_db = PmUser(
+            username=username,
+            account_id=auth_result.account_id,
+            access_token=auth_result.access_token,
+            expires_at=auth_result.expires_at,
+        )
+        session.add(user_db)
+        session.commit()
+        session.refresh(user_db)
+
+    return PmUserPublic(username=user_db.username, id=user_db.id)  # type: ignore
