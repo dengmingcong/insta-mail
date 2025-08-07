@@ -55,8 +55,8 @@ class UserOtp(PmUserBase):
     otp: str
 
 
-class PMProjectLocator(SQLModel):
-    """Pydantic model for locating a PM project."""
+class PMProjectPublic(SQLModel):
+    """Project information returned to the user."""
 
     id: int
     title: str
