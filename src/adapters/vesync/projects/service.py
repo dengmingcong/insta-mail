@@ -97,6 +97,10 @@ def auth_by_user_password(
     try:
         raw_token_info: str = _read_local_storage(page, "userLogin")
         token_info: dict = json.loads(raw_token_info)
+        all_users: list[dict] = json.loads(_read_local_storage(page, "allAccount"))
+        organization_tree: dict = json.loads(
+            _read_local_storage(page, "organizationTree")
+        )
     except ValueNotFoundInLocalStorageError:
         raise HTTPException(
             status_code=500, detail="Timeout waiting for userLogin token."
@@ -109,6 +113,8 @@ def auth_by_user_password(
         account_id=token_info["accountId"],
         access_token=token_info["token"],
         expires_at=token_info["expiredTimestamp"] / 1000,
+        all_users=all_users,
+        organization_tree=organization_tree,
     )
 
 
@@ -139,6 +145,10 @@ def enter_otp(otp_request: UserOtp) -> AuthSuccessResult:
     try:
         raw_token_info: str = _read_local_storage(page, "userLogin")
         token_info: dict = json.loads(raw_token_info)
+        all_users: list[dict] = json.loads(_read_local_storage(page, "allAccount"))
+        organization_tree: dict = json.loads(
+            _read_local_storage(page, "organizationTree")
+        )
     except ValueNotFoundInLocalStorageError:
         browser.close()
         playwright.stop()
@@ -157,4 +167,6 @@ def enter_otp(otp_request: UserOtp) -> AuthSuccessResult:
         account_id=token_info["accountId"],
         access_token=token_info["token"],
         expires_at=token_info["expiredTimestamp"] / 1000,
+        all_users=all_users,
+        organization_tree=organization_tree,
     )
