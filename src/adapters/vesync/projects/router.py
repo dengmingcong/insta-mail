@@ -5,6 +5,7 @@ from typing import Annotated
 
 import requests
 from fastapi import APIRouter, Depends
+from sqlmodel import select
 
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects import service as project_service
@@ -39,16 +40,31 @@ def signin_pm(
     if isinstance(result, UserPasswordAuthNeedOtpResult):
         return result
 
-    # If login is successful, save user in the database.
-    user_db = PmUser(
-        username=user_in.username,
-        account_id=result.account_id,
-        access_token=result.access_token,
-        expires_at=result.expires_at,
-    )
-    session.add(user_db)
-    session.commit()
-    session.refresh(user_db)
+    # Check if user already exists in database
+    statement = select(PmUser).where(PmUser.username == user_in.username)
+    existing_user = session.exec(statement).first()
+
+    if existing_user:
+        # Update existing user with new token info
+        existing_user.account_id = result.account_id
+        existing_user.access_token = result.access_token
+        existing_user.expires_at = result.expires_at
+        existing_user.last_updated = datetime.datetime.now()
+        session.add(existing_user)
+        session.commit()
+        session.refresh(existing_user)
+        user_db = existing_user
+    else:
+        # Create new user
+        user_db = PmUser(
+            username=user_in.username,
+            account_id=result.account_id,
+            access_token=result.access_token,
+            expires_at=result.expires_at,
+        )
+        session.add(user_db)
+        session.commit()
+        session.refresh(user_db)
 
     return PmUserPublic(username=user_db.username, id=user_db.id)  # type: ignore
 
@@ -62,15 +78,31 @@ def enter_otp(user_otp: UserOtp, session: SessionDep) -> PmUserPublic:
     """
     result = project_service.enter_otp(user_otp)
 
-    user_db = PmUser(
-        username=user_otp.username,
-        account_id=result.account_id,
-        access_token=result.access_token,
-        expires_at=result.expires_at,
-    )
-    session.add(user_db)
-    session.commit()
-    session.refresh(user_db)
+    # Check if user already exists in database.
+    statement = select(PmUser).where(PmUser.username == user_otp.username)
+    existing_user = session.exec(statement).first()
+
+    if existing_user:
+        # Update existing user with new token info.
+        existing_user.account_id = result.account_id
+        existing_user.access_token = result.access_token
+        existing_user.expires_at = result.expires_at
+        existing_user.last_updated = datetime.datetime.now()
+        session.add(existing_user)
+        session.commit()
+        session.refresh(existing_user)
+        user_db = existing_user
+    else:
+        # Create new user
+        user_db = PmUser(
+            username=user_otp.username,
+            account_id=result.account_id,
+            access_token=result.access_token,
+            expires_at=result.expires_at,
+        )
+        session.add(user_db)
+        session.commit()
+        session.refresh(user_db)
 
     return PmUserPublic(username=user_otp.username, id=user_db.id)  # type: ignore
 
