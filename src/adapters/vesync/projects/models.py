@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from pydantic import field_validator
 from sqlmodel import Field, SQLModel
 
 
@@ -10,6 +11,18 @@ class PmUserBase(SQLModel):
     """
 
     username: str
+
+    @field_validator("username")
+    @classmethod
+    def extract_username_from_email(cls, v: str) -> str:
+        """Extract username from email by removing the domain part.
+
+        :param v: The input username or email.
+        :return: Username without the email domain.
+        """
+        if "@" in v:
+            return v.split("@")[0]
+        return v
 
 
 class PmUserCreate(PmUserBase):
