@@ -55,10 +55,13 @@ class AuthSuccessResult(SQLModel):
     organization_tree: dict
 
 
-class PmUser(PmUserBase, AuthSuccessResult, table=True):
+class PmUser(PmUserBase, able=True):
     """An user in PM system."""
 
     id: int | None = Field(default=None, primary_key=True)
+    account_id: str
+    access_token: str
+    expires_at: float  # Unix timestamp in seconds
     created_at: datetime | None = Field(default_factory=datetime.now)
     last_updated: datetime | None = Field(default_factory=datetime.now)
 
