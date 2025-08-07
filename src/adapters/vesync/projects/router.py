@@ -11,6 +11,7 @@ from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects import service as project_service
 from src.adapters.vesync.projects.dependencies import get_fresh_user
 from src.adapters.vesync.projects.models import (
+    Organization,
     PMProject,
     PMProjectPublic,
     PmUser,
@@ -39,6 +40,25 @@ def signin_pm(
     # If MFA is required, return session ID for OTP entry.
     if isinstance(result, UserPasswordAuthNeedOtpResult):
         return result
+
+    # Check if organization already exists in database
+    org_statement = select(Organization).where(Organization.name == "vesync")
+    existing_org = session.exec(org_statement).first()
+
+    if existing_org:
+        # Update existing organization with new data
+        existing_org.users = result.all_users
+        existing_org.tree = result.organization_tree
+        existing_org.last_updated = datetime.datetime.now()
+        session.add(existing_org)
+    else:
+        # Create new organization
+        new_org = Organization(
+            name="vesync",
+            users=result.all_users,
+            tree=result.organization_tree,
+        )
+        session.add(new_org)
 
     # Check if user already exists in database
     statement = select(PmUser).where(PmUser.username == user_in.username)
@@ -77,6 +97,25 @@ def enter_otp(user_otp: UserOtp, session: SessionDep) -> PmUserPublic:
     :param session: Database session for saving user.
     """
     result = project_service.enter_otp(user_otp)
+
+    # Check if organization already exists in database
+    org_statement = select(Organization).where(Organization.name == "vesync")
+    existing_org = session.exec(org_statement).first()
+
+    if existing_org:
+        # Update existing organization with new data
+        existing_org.users = result.all_users
+        existing_org.tree = result.organization_tree
+        existing_org.last_updated = datetime.datetime.now()
+        session.add(existing_org)
+    else:
+        # Create new organization
+        new_org = Organization(
+            name="vesync",
+            users=result.all_users,
+            tree=result.organization_tree,
+        )
+        session.add(new_org)
 
     # Check if user already exists in database.
     statement = select(PmUser).where(PmUser.username == user_otp.username)
