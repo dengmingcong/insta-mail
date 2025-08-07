@@ -44,11 +44,15 @@ class AuthSuccessResult(SQLModel):
     :param account_id: ID in the PM system.
     :param access_token: Access token if authentication is successful.
     :param expires_at: Timestamp when the access token expires.
+    :param all_users: All users in the PM system.
+    :param organization_tree: Hierarchical structure of the organization.
     """
 
     account_id: str
     access_token: str
     expires_at: float  # Unix timestamp in seconds
+    all_users: list[dict]
+    organization_tree: dict
 
 
 class PmUser(PmUserBase, AuthSuccessResult, table=True):
@@ -84,3 +88,22 @@ class PMProject(SQLModel):
     web_developers: list[str]
     app_developers: list[str]
     ui_testers: list[str]
+
+
+class Organization(SQLModel, table=True):
+    """Company organization containing all users and hierarchy.
+
+    :param id: Unique identifier for the company.
+    :param name: Name of the company, in lowercase.
+    :param users: All users in the company.
+    :param tree: Hierarchical structure of the company.
+    :param created_at: Date and time when the record was created.
+    :param last_updated: Date and time when the record was last updated.
+    """
+
+    id: int = Field(default=1, primary_key=True)
+    name: str = Field(default="vesync")
+    users: list[dict]
+    tree: dict
+    created_at: datetime | None = Field(default_factory=datetime.now)
+    last_updated: datetime | None = Field(default_factory=datetime.now)
