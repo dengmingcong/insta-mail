@@ -1,7 +1,7 @@
 """Core of mails with all the endpoints."""
 
 import datetime
-from typing import Annotated
+from typing import Annotated, Optional
 
 import requests
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
@@ -65,7 +65,7 @@ async def read_mail(
     session: SessionDep,
 ):
     """Read a mail."""
-    mail: Mail = session.get(Mail, id)
+    mail: Optional[Mail] = session.get(Mail, id)
 
     if not mail:
         raise HTTPException(status_code=404, detail="Mail not found")
@@ -73,18 +73,18 @@ async def read_mail(
     # Set 'to' to the project managers and cloud developers if they exist.
     to = []
     if mail.project_managers:
-        to.extend(mail.project_managers.split(","))
+        to.extend(mail.project_managers)
     if mail.cloud_developers:
-        to.extend(mail.cloud_developers.split(","))
+        to.extend(mail.cloud_developers)
 
     # Set 'cc' to the web developers, app developers, and ui testers if they exist.
     cc = []
     if mail.web_developers:
-        cc.extend(mail.web_developers.split(","))
+        cc.extend(mail.web_developers)
     if mail.app_developers:
-        cc.extend(mail.app_developers.split(","))
+        cc.extend(mail.app_developers)
     if mail.ui_testers:
-        cc.extend(mail.ui_testers.split(","))
+        cc.extend(mail.ui_testers)
 
     # Set 'subject' to the project name.
     subject = mail.project_name
