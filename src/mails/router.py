@@ -129,7 +129,7 @@ async def test_mail(
     :param session: The database session.
     """
     # Get access token of the user from the database.
-    user: User = session.exec(select(User).where(User.email == to)).first()
+    user: Optional[User] = session.exec(select(User).where(User.email == to)).first()
 
     # If the user is not found, raise an error.
     if not user:
@@ -140,7 +140,7 @@ async def test_mail(
 
     # If the user's token is expired or will expire in less than 5 minutes, refresh it.
     if user.expires_at < datetime.datetime.now().timestamp() + 300:
-        user = refresh_access_token(user.id, session)
+        user = refresh_access_token(user.id, session)  # type: ignore
 
     # Get email content.
     mail: MailPublicReadyToBeSent = await read_mail(id, session)
