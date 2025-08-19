@@ -9,7 +9,7 @@ from sqlmodel import JSON, Column, Field, SQLModel
 class MailBase(SQLModel):
     """Base model for mail."""
 
-    project_name: Optional[str] = None
+    project_name: str
     conclusion: Optional[str] = None
     risk: str
     suggestion: str
