@@ -14,4 +14,4 @@ def get_role_members(all_members: list[dict], role: str) -> list[str]:
         f"[?post.postName=='{role}'] | [0].memberList", all_members
     )
 
-    return [member["userName"] for member in members]
+    return [member["userName"] for member in members] if members else []
