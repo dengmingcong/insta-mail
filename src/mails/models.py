@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import JSON, Column, Field, SQLModel
 
 
 class MailBase(SQLModel):
@@ -13,6 +13,7 @@ class MailBase(SQLModel):
     conclusion: Optional[str] = None
     risk: str
     suggestion: str
+    tools: list[str] = Field(sa_column=Column(JSON))
 
 
 class MailCreate(MailBase):
@@ -22,13 +23,15 @@ class MailCreate(MailBase):
 
 
 class Mail(MailBase, table=True):
+    """Schema for table ``mail``."""
+
     id: int | None = Field(default=None, primary_key=True)
-    project_managers: str  # Type 'list' is not supported in SQLModel, a list should be converted to a string first.
-    api_testers: str
-    cloud_developers: str
-    web_developers: str | None
-    app_developers: str | None
-    ui_testers: str | None
+    project_managers: list[str] = Field(sa_column=Column(JSON))
+    api_testers: list[str] = Field(sa_column=Column(JSON))
+    cloud_developers: list[str] = Field(sa_column=Column(JSON))
+    web_developers: list[str] | None = Field(sa_column=Column(JSON))
+    app_developers: list[str] | None = Field(sa_column=Column(JSON))
+    ui_testers: list[str] | None = Field(sa_column=Column(JSON))
     created_at: datetime | None = Field(default_factory=datetime.now)
     last_updated: datetime | None = Field(default_factory=datetime.now)
 
