@@ -34,12 +34,13 @@ async def create_mail(
         conclusion=mail_create.conclusion,
         risk=mail_create.risk,
         suggestion=mail_create.suggestion,
-        project_managers=",".join(project.project_managers),
-        api_testers=",".join(project.api_testers),
-        cloud_developers=",".join(project.cloud_developers),
-        web_developers=",".join(project.web_developers),
-        app_developers=",".join(project.app_developers),
-        ui_testers=",".join(project.ui_testers),
+        tools=mail_create.tools,
+        project_managers=project.project_managers,
+        api_testers=project.api_testers,
+        cloud_developers=project.cloud_developers,
+        web_developers=project.web_developers,
+        app_developers=project.app_developers,
+        ui_testers=project.ui_testers,
     )
     session.add(mail_db)
     session.commit()
