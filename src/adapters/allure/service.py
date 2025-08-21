@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 from urllib.parse import urlparse
 
+from src.adapters.allure.utils import get_url_path
+
 
 class StepExtractor(object):
     """Extractor for one step of testcase.
@@ -357,3 +359,16 @@ class ApiStat(object):
                 self.stat_data["apis"][api_url] = count + 1
 
             self.stat_data["testcases"].append(testcase_stat)
+
+
+def get_apis_from_allure_report(allure_report_home: Path) -> list[str]:
+    """Get API URLs from Allure report."""
+    api_stat = ApiStat(allure_report_home)
+    api_stat.stat()
+
+    api_urls = list(api_stat.stat_data["apis"].keys())
+
+    api_paths = [get_url_path(_) for _ in api_urls]
+    api_paths.sort()
+
+    return api_paths
