@@ -4,16 +4,16 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, HTTPException, UploadFile
 
 router = APIRouter(prefix="/allure", tags=["allure"])
 
 
 @router.post("/reports")
-async def upload_allure_report(file: UploadFile = File(...)) -> dict:
+async def upload_allure_report(file: UploadFile) -> dict:
     """Upload an archive and extract it into a temporary directory.
 
-    Note: Further parsing is intentionally left as TODO for later implementation.
+    :param file: The uploaded file, must be a zip archive.
     """
     # Basic content-type check (optional)
     if not file.filename:
