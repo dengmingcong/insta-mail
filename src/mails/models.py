@@ -14,6 +14,7 @@ class MailBase(SQLModel):
     risk: str
     suggestion: str
     tools: list[str] = Field(sa_column=Column(JSON))
+    apis: list[dict] = Field(sa_column=Column(JSON))
 
 
 class MailCreate(MailBase):
@@ -36,7 +37,7 @@ class Mail(MailBase, table=True):
     last_updated: datetime | None = Field(default_factory=datetime.now)
 
 
-class MailPublic(MailBase):
+class MailPublic(SQLModel):
     """The public data model for mail."""
 
     id: int

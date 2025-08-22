@@ -41,6 +41,7 @@ async def create_mail(
         web_developers=project.web_developers,
         app_developers=project.app_developers,
         ui_testers=project.ui_testers,
+        apis=mail_create.apis,
     )
     session.add(mail_db)
     session.commit()
