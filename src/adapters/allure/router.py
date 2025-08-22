@@ -6,6 +6,8 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, UploadFile
 
+from src.adapters.allure.service import get_apis_from_allure_report
+
 router = APIRouter(prefix="/allure", tags=["allure"])
 
 
@@ -49,8 +51,32 @@ async def upload_allure_report(file: UploadFile) -> list[dict]:
                     status_code=500, detail=f"Failed to extract archive: {exc}"
                 )
 
-            # TODO: 在此解析 tmp_dir 下的报告，返回接口列表，如: [{"path": "/api/foo"}, ...]
-            return []
+            # 定位 Allure 报告根目录（包含 data/test-cases）。
+            def find_report_root(base: Path) -> Path | None:
+                candidate = base / "data" / "test-cases"
+                if candidate.exists() and candidate.is_dir():
+                    return base
+                for child in base.iterdir():
+                    if child.is_dir():
+                        c2 = child / "data" / "test-cases"
+                        if c2.exists() and c2.is_dir():
+                            return child
+                return None
+
+            report_root = find_report_root(tmp_dir)
+            if not report_root:
+                raise HTTPException(
+                    status_code=400, detail="Invalid Allure report content"
+                )
+
+            try:
+                paths = get_apis_from_allure_report(report_root)
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=500, detail=f"Failed to parse report: {exc}"
+                )
+
+            return [{"path": p} for p in paths]
     except HTTPException:
         # 透传上面抛出的 HTTPException。
         raise
