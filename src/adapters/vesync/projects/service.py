@@ -7,7 +7,7 @@ from threading import Lock
 from typing import Any, Dict, Union
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import HTTPException
 from playwright.sync_api import Browser, Page, Playwright, expect, sync_playwright
 from sqlmodel import Session, select
 
@@ -22,8 +22,6 @@ from src.adapters.vesync.projects.models import (
     UserOtp,
     UserPasswordAuthNeedOtpResult,
 )
-
-router = APIRouter(prefix="/projects")
 
 # In-memory store for Playwright sessions.
 _sessions: Dict[str, Dict[str, Any]] = {}
