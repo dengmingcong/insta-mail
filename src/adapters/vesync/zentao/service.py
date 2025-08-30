@@ -97,3 +97,30 @@ def get_one_project_by_name(session: Session, project_name: str) -> dict:
         )
 
     return filtered_projects[0]
+
+
+def get_project_bugs(session: Session, project_id: str) -> list[dict]:
+    """Get all bugs for a given project ID.
+
+    :param session: The requests session object.
+    :param project_id: The ID of the project to retrieve bugs for.
+    :return: A list of bugs associated with the project.
+        Example::
+
+            [
+            ]
+    :raise HTTPException: If failed to get bugs.
+    """
+    # 100 means total bug count.
+    # 2000 means page size.
+    response = session.get(
+        f"https://zentao.vesync.cn/zentao/bug-browse-{project_id}-0-all-0--100-2000-1.json"
+    ).json()
+
+    # Make sure response success.
+    if response["status"] != "success":
+        raise HTTPException(status_code=500, detail="Failed to get bugs.")
+
+    bugs = json.loads(response["data"])["bugs"]
+
+    return bugs
