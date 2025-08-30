@@ -81,12 +81,13 @@ def get_one_project_by_name(session: Session, project_name: str) -> dict:
     if response["status"] != "success":
         raise HTTPException(status_code=500, detail="Failed to get projects.")
 
-    projects = json.loads(response["data"])
+    projects = json.loads(response["data"])["products"]
 
     # Canonicalize the project name before filtering.
     project_name = canonicalize_project_name(project_name)
 
     # Filter projects by name.
+    print(projects)
     filtered_projects = [p for p in projects if project_name in p["name"]]
 
     # Make sure one and exactly one project was found.
@@ -108,7 +109,67 @@ def get_project_bugs(session: Session, project_id: str) -> list[dict]:
         Example::
 
             [
+                {
+                    "id": "77100",
+                    "product": "1642",
+                    "branch": "0",
+                    "module": "9426",
+                    "project": "2585",
+                    "plan": "0",
+                    "story": "0",
+                    "storyVersion": "1",
+                    "task": "0",
+                    "toTask": "0",
+                    "toStory": "0",
+                    "title": "【UAT】【1】【云平台】【历史问题】同一天创建相同神策人群标签的任务，会出现丢失用户的情况",
+                    "keywords": "",
+                    "severity": "3",
+                    "pri": "2",
+                    "type": "code_logic_defects",
+                    "os": "web_backend",
+                    "browser": "chrome",
+                    "hardware": "",
+                    "found": "",
+                    "steps": "some text",
+                    "status": "closed",
+                    "subStatus": "",
+                    "color": "",
+                    "confirmed": "1",
+                    "activatedCount": "0",
+                    "activatedDate": "0000-00-00 00:00:00",
+                    "mailto": "",
+                    "openedBy": "dorawang",
+                    "openedDate": "2025-06-24 12:24:42",
+                    "openedBuild": "主干",
+                    "assignedTo": "closed",
+                    "assignedDate": "2025-06-26 09:22:49",
+                    "deadline": "0000-00-00",
+                    "resolvedBy": "rogercai",
+                    "resolution": "leftover_bug",
+                    "resolvedBuild": "主干",
+                    "resolvedDate": "2025-06-24 14:52:13",
+                    "closedBy": "dorawang",
+                    "closedDate": "2025-06-26 09:22:49",
+                    "duplicateBug": "0",
+                    "linkBug": "",
+                    "case": "0",
+                    "caseVersion": "0",
+                    "result": "0",
+                    "repo": "0",
+                    "entry": "",
+                    "lines": "",
+                    "v1": "",
+                    "v2": "",
+                    "repoType": "",
+                    "testtask": "0",
+                    "lastEditedBy": "dorawang",
+                    "lastEditedDate": "2025-06-26 09:22:49",
+                    "deleted": "0",
+                    "planTitle": null,
+                    "needconfirm": false
+                }
             ]
+
     :raise HTTPException: If failed to get bugs.
     """
     # 100 means total bug count.
