@@ -16,6 +16,7 @@ requests = "^2.32.3"
 playwright = "^1.39.0"
 jmespath = "^1.0.1"
 sqlmodel = "^0.0.24"
+matplotlib = "^3.10.6"
 
 
 [build-system]
