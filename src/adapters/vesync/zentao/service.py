@@ -1,10 +1,15 @@
 """Module specific business logic."""
 
+import datetime
 import json
+from collections import defaultdict
+from typing import Optional
+from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException
 from requests import Session
 
+from src.adapters.vesync.zentao.exceptions import BugOpenedBeforeTestStartError
 from src.adapters.vesync.zentao.utils import canonicalize_project_name
 
 
@@ -185,3 +190,79 @@ def get_project_bugs(session: Session, project_id: str) -> list[dict]:
     bugs = json.loads(response["data"])["bugs"]
 
     return bugs
+
+
+def gen_burndown_chart(
+    bugs: list[dict], test_start_datetime: datetime.datetime
+) -> Optional[bytes]:
+    """Generate a burndown chart for the given bugs.
+
+    :param bugs: A list of bugs read from zentao.
+    :param test_start_datetime: The datetime when the testing started.
+        It should be timezone-aware and earlier than any bug's openedDate.
+    :return: The PNG image bytes of the generated burndown chart.
+    """
+    if not (total_bugs := len(bugs)):
+        return
+
+    shanghai_tz = ZoneInfo("Asia/Shanghai")
+
+    # Get bugs' openedDate and resolvedDate.
+    # Convert naive datetime strings to timezone-aware datetime objects
+    opened_dates: list[datetime.datetime] = []
+    resolved_dates: list[datetime.datetime] = []
+
+    for bug in bugs:
+        if bug.get("openedDate"):
+            opened_dt_naive = datetime.datetime.strptime(
+                bug["openedDate"], "%Y-%m-%d %H:%M:%S"
+            )
+            opened_dates.append(opened_dt_naive.replace(tzinfo=shanghai_tz))
+
+        if bug.get("resolvedDate"):
+            resolved_dt_naive = datetime.datetime.strptime(
+                bug["resolvedDate"], "%Y-%m-%d %H:%M:%S"
+            )
+            resolved_dates.append(resolved_dt_naive.replace(tzinfo=shanghai_tz))
+
+    # Sort the dates.
+    opened_dates.sort()
+    resolved_dates.sort()
+
+    # Raise error if any bug is opened before test start datetime.
+    if opened_dates[0] < test_start_datetime:
+        raise BugOpenedBeforeTestStartError(
+            status_code=500,
+            detail="Some bugs are opened before the test start datetime.",
+        )
+
+    # Discovered bugs burndown data.
+    x_opened: list[datetime.datetime] = [test_start_datetime]
+    y_opened: list[int] = [total_bugs]
+
+    bugs_left_to_discover = total_bugs
+    bugs_discovered_by_date: dict = defaultdict(int)
+    for date in opened_dates:
+        bugs_discovered_by_date[date] += 1
+
+    sorted_discovered_dates = sorted(bugs_discovered_by_date.keys())
+    for date in sorted_discovered_dates:
+        bugs_left_to_discover -= bugs_discovered_by_date[date]
+        x_opened.append(date)
+        y_opened.append(bugs_left_to_discover)
+
+    # Resolved bugs burndown data.
+    # The date (x-axis) of the first point is the date of the first discovered bug.
+    x_resolved: list[datetime.datetime] = [x_opened[1]]
+    y_resolved: list[int] = [total_bugs]
+
+    bugs_left_to_resolve = total_bugs
+    bugs_resolved_by_date: dict = defaultdict(int)
+    for date in resolved_dates:
+        bugs_resolved_by_date[date] += 1
+
+    sorted_resolved_dates = sorted(bugs_resolved_by_date.keys())
+    for date in sorted_resolved_dates:
+        bugs_left_to_resolve -= bugs_resolved_by_date[date]
+        x_resolved.append(date)
+        y_resolved.append(bugs_left_to_resolve)
