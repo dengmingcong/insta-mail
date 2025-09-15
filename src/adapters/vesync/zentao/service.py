@@ -6,7 +6,9 @@ from collections import defaultdict
 from typing import Optional
 from zoneinfo import ZoneInfo
 
+import matplotlib.pyplot as plt
 from fastapi import HTTPException
+from matplotlib import dates as mdates
 from requests import Session
 
 from src.adapters.vesync.zentao.exceptions import BugOpenedBeforeTestStartError
@@ -266,3 +268,67 @@ def gen_burndown_chart(
         bugs_left_to_resolve -= bugs_resolved_by_date[date]
         x_resolved.append(date)
         y_resolved.append(bugs_left_to_resolve)
+
+    # Create a figure with an Axes.
+    DPI = 100
+    fig, ax = plt.subplots(figsize=(800 / DPI, 600 / DPI), dpi=DPI)
+
+    # X-axis date formatting.
+    all_dates = x_opened + x_resolved
+    min_date: datetime.datetime = min(all_dates)
+    max_date: datetime.datetime = max(all_dates)
+    time_delta = max_date - min_date
+
+    # Highlight weekends.
+    current_date = min_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_date = max_date.replace(
+        hour=0, minute=0, second=0, microsecond=0
+    ) + datetime.timedelta(days=1)
+
+    while current_date < end_date:
+        if current_date.weekday() in (5, 6):  # Saturday or Sunday
+            ax.axvspan(
+                current_date,  # type: ignore
+                current_date + datetime.timedelta(days=1),  # type: ignore
+                color="lightgrey",
+                alpha=0.5,
+            )
+        current_date += datetime.timedelta(days=1)
+
+    # X-axis major ticks and labels.
+    number_ticks = 6
+
+    if time_delta.days > 1:
+        days_between_ticks = max(1, time_delta.days // (number_ticks - 1))
+        major_locator = mdates.DayLocator(interval=days_between_ticks, tz=shanghai_tz)
+        ax.xaxis.set_major_locator(major_locator)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d", tz=shanghai_tz))
+    else:
+        hours_between_ticks = max(1, time_delta.seconds // 3600 // (number_ticks - 1))
+        major_locator = mdates.HourLocator(interval=hours_between_ticks, tz=shanghai_tz)
+        ax.xaxis.set_major_locator(major_locator)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=shanghai_tz))
+
+    # Plot the lines.
+    ax.plot(x_opened, y_opened, marker="o", label="Hidden Bugs")  # type: ignore
+    ax.plot(
+        x_resolved,  # type: ignore
+        y_resolved,
+        marker="8",
+        label="Unresolved Bugs",
+    )
+    ax.set_title("Bugs Burndown Chart")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Number of Bugs")
+    ax.legend()
+
+    # Let X-axis rotate labels automatically.
+    fig.autofmt_xdate()
+
+    # Let X-axis start from the first tick.
+    tick_locs = ax.xaxis.get_ticklocs()
+    first_tick = mdates.num2date(tick_locs[0], tz=shanghai_tz)
+    ax.set_xlim(left=first_tick)
+
+    # Let Y-axis start from 0.
+    ax.set_ylim(bottom=0)
