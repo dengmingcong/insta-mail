@@ -325,10 +325,5 @@ def gen_burndown_chart(
     # Let X-axis rotate labels automatically.
     fig.autofmt_xdate()
 
-    # Let X-axis start from the first tick.
-    tick_locs = ax.xaxis.get_ticklocs()
-    first_tick = mdates.num2date(tick_locs[0], tz=shanghai_tz)
-    ax.set_xlim(left=first_tick)
-
     # Let Y-axis start from 0.
     ax.set_ylim(bottom=0)
