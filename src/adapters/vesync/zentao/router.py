@@ -14,7 +14,7 @@ router = APIRouter(prefix="/zentao")
 
 @router.get("/bugs")
 def read_project_bugs(project_name: str) -> list[dict]:
-    """Get bugs for a specific project.
+    """Get bugs for a specific project from zentao.
 
     :param project_name: The name of the project in zentao.
     """
