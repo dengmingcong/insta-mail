@@ -51,10 +51,10 @@ def signin_zentao(session: Session, username: str, password: str):
 
 
 def get_one_project_by_name(session: Session, project_name: str) -> dict:
-    """Get one and exactly one project filtering by name.
+    """Get one and exactly one project from zentao filtering by name.
 
     :param session: The requests session object.
-    :param project_name: The name of the project to retrieve.
+    :param project_name: The name of the project in zentao to retrieve.
     :return: The project data if found, otherwise an error.
         Example::
 
@@ -78,6 +78,7 @@ def get_one_project_by_name(session: Session, project_name: str) -> dict:
                 "order": "8775",
                 "deleted": "0"
             }
+
     :raise HTTPException: If failed to get all projects or if not exactly one project was found.
     """
     # Get all projects.
@@ -109,10 +110,10 @@ def get_one_project_by_name(session: Session, project_name: str) -> dict:
 
 
 def get_project_bugs(session: Session, project_id: str) -> list[dict]:
-    """Get all bugs for a given project ID.
+    """Get all bugs for a given project ID from zentao.
 
     :param session: The requests session object.
-    :param project_id: The ID of the project to retrieve bugs for.
+    :param project_id: The ID of the project in zentao to retrieve bugs for.
     :return: A list of bugs associated with the project.
         Example::
 
