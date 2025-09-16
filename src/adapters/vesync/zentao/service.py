@@ -274,7 +274,7 @@ def gen_burndown_chart(
     fig, ax = plt.subplots(figsize=(800 / DPI, 600 / DPI), dpi=DPI)
 
     # X-axis date formatting.
-    all_dates = x_opened + x_resolved
+    all_dates = x_opened + x_resolved  # Include test start datetime.
     min_date: datetime.datetime = min(all_dates)
     max_date: datetime.datetime = max(all_dates)
     time_delta = max_date - min_date
@@ -324,6 +324,9 @@ def gen_burndown_chart(
 
     # Let X-axis rotate labels automatically.
     fig.autofmt_xdate()
+
+    # Set Y-axis integer ticks only.
+    ax.yaxis.set_major_locator(mticker.MaxNLocator(integer=True))
 
     # Let Y-axis start from 0.
     ax.set_ylim(bottom=0)
