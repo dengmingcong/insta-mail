@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 import matplotlib.pyplot as plt
 from fastapi import HTTPException
 from matplotlib import dates as mdates
+from matplotlib import ticker as mticker
 from requests import Session
 
 from src.adapters.vesync.zentao.exceptions import BugOpenedBeforeTestStartError
@@ -296,16 +297,16 @@ def gen_burndown_chart(
         current_date += datetime.timedelta(days=1)
 
     # X-axis major ticks and labels.
-    number_ticks = 6
+    MAX_X_AXIS_TICKS = 12
 
     if time_delta.days > 1:
-        days_between_ticks = max(1, time_delta.days // (number_ticks - 1))
+        days_between_ticks = max(1, time_delta.days // (MAX_X_AXIS_TICKS - 1))
         major_locator = mdates.DayLocator(interval=days_between_ticks, tz=shanghai_tz)
         ax.xaxis.set_major_locator(major_locator)
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d", tz=shanghai_tz))
     else:
         hours_between_ticks = max(
-            1, int(time_delta.total_seconds()) // 3600 // (number_ticks - 1)
+            1, int(time_delta.total_seconds()) // 3600 // (MAX_X_AXIS_TICKS - 1)
         )
         major_locator = mdates.HourLocator(interval=hours_between_ticks, tz=shanghai_tz)
         ax.xaxis.set_major_locator(major_locator)
@@ -332,3 +333,7 @@ def gen_burndown_chart(
 
     # Let Y-axis start from 0.
     ax.set_ylim(bottom=0)
+
+    # Save the figure.
+    plt.savefig("burndown_chart.png")
+    plt.close()
