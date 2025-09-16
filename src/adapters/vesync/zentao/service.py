@@ -221,7 +221,7 @@ def gen_burndown_chart(
             )
             opened_dates.append(opened_dt_naive.replace(tzinfo=shanghai_tz))
 
-        if bug.get("resolvedDate"):
+        if bug.get("resolvedDate") and bug["resolvedDate"] != "0000-00-00 00:00:00":
             resolved_dt_naive = datetime.datetime.strptime(
                 bug["resolvedDate"], "%Y-%m-%d %H:%M:%S"
             )
