@@ -304,7 +304,9 @@ def gen_burndown_chart(
         ax.xaxis.set_major_locator(major_locator)
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d", tz=shanghai_tz))
     else:
-        hours_between_ticks = max(1, time_delta.seconds // 3600 // (number_ticks - 1))
+        hours_between_ticks = max(
+            1, int(time_delta.total_seconds()) // 3600 // (number_ticks - 1)
+        )
         major_locator = mdates.HourLocator(interval=hours_between_ticks, tz=shanghai_tz)
         ax.xaxis.set_major_locator(major_locator)
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=shanghai_tz))
