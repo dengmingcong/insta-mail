@@ -10,8 +10,8 @@ from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects import service as project_service
 from src.adapters.vesync.projects.dependencies import get_fresh_user
 from src.adapters.vesync.projects.models import (
-    PMProject,
-    PMProjectPublic,
+    PmProject,
+    PmProjectPublic,
     PmUser,
     PmUserCreate,
     PmUserPublic,
@@ -66,7 +66,7 @@ async def read_projects(
     title_like: str | None = None,
     page_number: int = 1,
     page_size: int = 50,
-) -> list[PMProjectPublic]:
+) -> list[PmProjectPublic]:
     """Query projects by matching the title.
 
     :param fresh_pm_user: The user with a fresh token.
@@ -97,7 +97,7 @@ async def read_projects(
     )
 
     return [
-        PMProjectPublic(id=project["projectId"], title=project["projectFullName"])
+        PmProjectPublic(id=project["projectId"], title=project["projectFullName"])
         for project in response.json()["result"]["projectList"]
     ]
 
@@ -106,7 +106,7 @@ async def read_projects(
 async def read_project(
     project_id: int,
     fresh_pm_user: Annotated[PmUser, Depends(get_fresh_user)],
-) -> PMProject:
+) -> PmProject:
     """Query project details by project ID.
 
     :param project_id: Project ID.
@@ -128,7 +128,7 @@ async def read_project(
 
     raw_members = response.json()["result"]["postMemberList"]
 
-    return PMProject(
+    return PmProject(
         project_managers=get_role_members(raw_members, "项目经理"),
         api_testers=get_role_members(raw_members, "云测试"),
         cloud_developers=get_role_members(raw_members, "云开发"),

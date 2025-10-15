@@ -75,14 +75,14 @@ class UserOtp(PmUserBase):
     otp: str
 
 
-class PMProjectPublic(SQLModel):
+class PmProjectPublic(SQLModel):
     """Project information returned to the user."""
 
     id: int
     title: str
 
 
-class PMProject(SQLModel):
+class PmProject(SQLModel):
     """Pydantic model for PM project details."""
 
     project_managers: list[str]

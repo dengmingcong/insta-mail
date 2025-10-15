@@ -9,7 +9,7 @@ from jinja2 import Environment, PackageLoader
 from sqlmodel import select
 
 from src.adapters.vesync.projects.dependencies import get_fresh_user
-from src.adapters.vesync.projects.models import PMProject, PmUser
+from src.adapters.vesync.projects.models import PmProject, PmUser
 from src.adapters.vesync.projects.router import read_project
 from src.database import SessionDep
 from src.mails.models import Mail, MailCreate, MailPublic, MailPublicReadyToBeSent
@@ -28,7 +28,7 @@ async def create_mail(
     fresh_pm_user: Annotated[PmUser, Depends(get_fresh_user)],
 ):
     """Create a mail."""
-    project: PMProject = await read_project(mail_create.project_id, fresh_pm_user)
+    project: PmProject = await read_project(mail_create.project_id, fresh_pm_user)
     mail_db: Mail = Mail(
         project_name=mail_create.project_name,
         conclusion=mail_create.conclusion,
