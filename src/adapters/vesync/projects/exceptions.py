@@ -46,3 +46,18 @@ class OrganizationNotFoundError(HTTPException):
         )
 
     pass
+
+
+class NoTasksAssignedToApiTesterFoundError(HTTPException):
+    """Raised when no tasks are assigned to API tester."""
+
+    def __init__(
+        self,
+        detail: str = "没有找到分类为“云CI测试”且责任人为云测试组成员的任务",
+    ):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=detail,
+        )
+
+    pass
