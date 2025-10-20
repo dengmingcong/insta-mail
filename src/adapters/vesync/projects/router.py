@@ -26,7 +26,7 @@ from src.adapters.vesync.projects.models import (
     UserOtp,
     UserPasswordAuthNeedOtpResult,
 )
-from src.adapters.vesync.projects.utils import get_role_members
+from src.adapters.vesync.projects.utils import get_project_role_members
 from src.database import SessionDep
 
 router = APIRouter(prefix="/projects")
@@ -232,10 +232,10 @@ async def read_project(
     latest_actual_end_date = max(actual_end_dates)
 
     return PmProject(
-        project_managers=get_role_members(raw_members, "项目经理"),
-        api_testers=get_role_members(raw_members, "云测试"),
-        cloud_developers=get_role_members(raw_members, "云开发"),
-        web_developers=get_role_members(raw_members, "web前端开发"),
-        app_developers=get_role_members(raw_members, "app开发"),
-        ui_testers=get_role_members(raw_members, "系统测试"),
+        project_managers=get_project_role_members(raw_members, "项目经理"),
+        api_testers=get_project_role_members(raw_members, "云测试"),
+        cloud_developers=get_project_role_members(raw_members, "云开发"),
+        web_developers=get_project_role_members(raw_members, "web前端开发"),
+        app_developers=get_project_role_members(raw_members, "app开发"),
+        ui_testers=get_project_role_members(raw_members, "系统测试"),
     )

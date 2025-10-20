@@ -3,10 +3,10 @@
 import jmespath
 
 
-def get_role_members(all_members: list[dict], role: str) -> list[str]:
-    """Get members by role.
+def get_project_role_members(project_all_members: list[dict], role: str) -> list[str]:
+    """Get members by role who take part in the project.
 
-    Example of one item in ``all_members``::
+    Example of one item in ``project_all_members``::
 
         {
             "post": {
@@ -24,12 +24,12 @@ def get_role_members(all_members: list[dict], role: str) -> list[str]:
             ]
         }
 
-    :param all_members: All members of all roles.
+    :param project_all_members: All members of all roles.
     :param role: Role to filter.
     :return: Members of the role.
     """
     members = jmespath.search(
-        f"[?post.postName=='{role}'] | [0].memberList", all_members
+        f"[?post.postName=='{role}'] | [0].memberList", project_all_members
     )
 
     return [member["userName"] for member in members] if members else []
