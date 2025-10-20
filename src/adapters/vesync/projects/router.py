@@ -207,6 +207,30 @@ async def read_project(
     # Find the earliest actual start date.
     earliest_actual_start_date = min(actual_start_dates)
 
+    plan_end_dates: list[datetime.date] = []
+    for task in ci_test_tasks:
+        if not task.get("planEndDate"):
+            raise IncompleteTasksError(f"任务 {task['taskName']} 尚未填写计划结束日期")
+
+        plan_end_dates.append(
+            datetime.datetime.strptime(task["planEndDate"], "%Y-%m-%d").date()
+        )
+
+    # Find the latest plan end date.
+    latest_plan_end_date = max(plan_end_dates)
+
+    actual_end_dates: list[datetime.date] = []
+    for task in ci_test_tasks:
+        if not task.get("actualEndDate"):
+            raise IncompleteTasksError(f"任务 {task['taskName']} 尚未填写实际结束日期")
+
+        actual_end_dates.append(
+            datetime.datetime.strptime(task["actualEndDate"], "%Y-%m-%d").date()
+        )
+
+    # Find the latest actual end date.
+    latest_actual_end_date = max(actual_end_dates)
+
     return PmProject(
         project_managers=get_role_members(raw_members, "项目经理"),
         api_testers=get_role_members(raw_members, "云测试"),
