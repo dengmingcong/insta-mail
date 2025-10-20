@@ -61,3 +61,18 @@ class NoTasksAssignedToApiTesterFoundError(HTTPException):
         )
 
     pass
+
+
+class IncompleteTasksError(HTTPException):
+    """Raised when there are incomplete tasks."""
+
+    def __init__(
+        self,
+        detail: str = "存在未填写完成的任务，请填写完成后再来生成测试报告",
+    ):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=detail,
+        )
+
+    pass
