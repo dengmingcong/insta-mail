@@ -22,6 +22,7 @@ PM_API_CONTEXT: dict = {
 API_SEARCH_PROJECTS: str = "/platform/admin/pmProject/v2/pageProjectSummaryV2"
 API_GET_PROJECT_MEMBERS: str = "/platform/admin/pmProject/v2/getRelatedProjectMember"
 API_GET_PROJECT_PLANS: str = "/platform/admin/pmProject/v2/getProjectSchedule"
+API_GET_PROJECT_TASKS: str = "/platform/admin/pmProject/v2/getRelatedProjectTask"
 
 
 class LoginPageLocators:
