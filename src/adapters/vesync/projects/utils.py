@@ -71,3 +71,61 @@ def get_organization_position_members(
     )
 
     return jmespath.search(expression, organization_all_members)
+
+
+def get_project_tasks_by_category(
+    project_all_tasks: list[dict], category: str
+) -> list[dict]:
+    """Get tasks by category in the project.
+
+    Example of one item in ``project_all_tasks``::
+
+        {
+            "taskId": 173130,
+            "tmpTask": false,
+            "taskName": "CI 测试",
+            "projectId": 19806,
+            "taskCategoryPath": [
+            {
+                "categoryId": 4,
+                "categoryName": "开发阶段",
+                "categoryOrder": 40
+            },
+            {
+                "categoryId": 79,
+                "categoryName": "编码开发",
+                "categoryOrder": 40
+            },
+            {
+                "categoryId": 82,
+                "categoryName": "云开发",
+                "categoryOrder": 30
+            },
+            {
+                "categoryId": 85,
+                "categoryName": "云CI测试",
+                "categoryOrder": 30
+            }
+            ],
+            "taskDescription": "CI 测试",
+            "taskOwner": {
+            "userId": "a009e7ee-b148-103a-8f95-0f7eff6a78aa",
+            "userName": "raigor.deng",
+            "userCnName": "邓明聪"
+            },
+            "planWorkHour": 12,
+            "progressPercentage": 100,
+            "planStartDate": "2025-10-11",
+            "planEndDate": "2025-10-13",
+            "actualStartDate": "2025-10-11",
+            "actualEndDate": "2025-10-15",
+            "actualWorkHour": 27
+        }
+
+    :param project_all_tasks: All tasks in the project.
+    :param category: Category to filter.
+    :return: Tasks of the category.
+    """
+    return jmespath.search(
+        f"[?taskCategoryPath[?categoryName == '{category}']]", project_all_tasks
+    )
