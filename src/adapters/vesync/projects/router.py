@@ -3,7 +3,6 @@
 import datetime
 from typing import Annotated
 
-import jmespath
 import requests
 from fastapi import APIRouter, Depends
 from sqlmodel import select
@@ -26,7 +25,11 @@ from src.adapters.vesync.projects.models import (
     UserOtp,
     UserPasswordAuthNeedOtpResult,
 )
-from src.adapters.vesync.projects.utils import get_project_position_members
+from src.adapters.vesync.projects.utils import (
+    get_organization_position_members,
+    get_project_position_members,
+    get_project_tasks_by_category,
+)
 from src.database import SessionDep
 
 router = APIRouter(prefix="/projects")
@@ -147,7 +150,9 @@ async def read_project(
         raise OrganizationNotFoundError()
 
     # Get all members whose position is '云测试'.
-    all_api_testers = jmespath.search("[?postName == '云测试'].userName", org.users)
+    all_api_testers = get_organization_position_members(
+        org.users, "云测试", is_username_only=True
+    )
 
     response = requests.post(
         project_constants.PM_API_ORIGIN + project_constants.API_GET_PROJECT_TASKS,
@@ -167,9 +172,7 @@ async def read_project(
     all_tasks: list[dict] = response.json()["result"]["taskList"]
 
     # Get tasks whose category is '云CI测试'.
-    ci_test_tasks: list[dict] = jmespath.search(
-        "[?taskCategoryPath[?categoryName=='云CI测试']]", all_tasks
-    )
+    ci_test_tasks: list[dict] = get_project_tasks_by_category(all_tasks, "云CI测试")
 
     # Filter again to keep only tasks owned by '云测试' members.
     ci_test_tasks = [
