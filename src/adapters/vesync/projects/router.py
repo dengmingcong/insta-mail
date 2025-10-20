@@ -3,13 +3,21 @@
 import datetime
 from typing import Annotated
 
+import jmespath
 import requests
 from fastapi import APIRouter, Depends
+from sqlmodel import select
 
 from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects import service as project_service
 from src.adapters.vesync.projects.dependencies import get_fresh_user
+from src.adapters.vesync.projects.exceptions import (
+    IncompleteTasksError,
+    NoTasksAssignedToApiTesterFoundError,
+    OrganizationNotFoundError,
+)
 from src.adapters.vesync.projects.models import (
+    Organization,
     PmProject,
     PmProjectPublic,
     PmUser,
@@ -106,6 +114,7 @@ async def read_projects(
 async def read_project(
     project_id: int,
     fresh_pm_user: Annotated[PmUser, Depends(get_fresh_user)],
+    session: SessionDep,
 ) -> PmProject:
     """Query project details by project ID.
 
@@ -127,6 +136,76 @@ async def read_project(
     )
 
     raw_members = response.json()["result"]["postMemberList"]
+
+    # Search for organization 'vesync'.
+    org = session.exec(
+        select(Organization).where(Organization.name == "vesync")
+    ).first()
+
+    # If organization not found, raise error.
+    if not org:
+        raise OrganizationNotFoundError()
+
+    # Get all members whose position is '云测试'.
+    all_api_testers = jmespath.search("[?postName == '云测试'].userName", org.users)
+
+    response = requests.post(
+        project_constants.PM_API_ORIGIN + project_constants.API_GET_PROJECT_TASKS,
+        json={
+            "context": {
+                **project_constants.PM_API_CONTEXT,
+                "method": "getRelatedProjectTasks",
+                "accountID": fresh_pm_user.account_id,
+                "token": fresh_pm_user.access_token,
+                "traceId": int(datetime.datetime.now().timestamp()),
+            },
+            "data": {"projectId": project_id},
+        },
+    )
+
+    # Get all tasks.
+    all_tasks: list[dict] = response.json()["result"]["taskList"]
+
+    # Get tasks whose category is '云CI测试'.
+    ci_test_tasks: list[dict] = jmespath.search(
+        "[?taskCategoryPath[?categoryName=='云CI测试']]", all_tasks
+    )
+
+    # Filter again to keep only tasks owned by '云测试' members.
+    ci_test_tasks = [
+        task
+        for task in ci_test_tasks
+        if task["taskOwner"]["userName"] in all_api_testers
+    ]
+
+    if not ci_test_tasks:
+        raise NoTasksAssignedToApiTesterFoundError()
+
+    plan_start_dates: list[datetime.date] = []
+
+    for task in ci_test_tasks:
+        if not task.get("planStartDate"):
+            raise IncompleteTasksError(f"任务 {task['taskName']} 尚未填写计划开始日期")
+
+        plan_start_dates.append(
+            datetime.datetime.strptime(task["planStartDate"], "%Y-%m-%d").date()
+        )
+
+    # Find the earliest start date.
+    earliest_plan_start_date = min(plan_start_dates)
+
+    actual_start_dates: list[datetime.date] = []
+
+    for task in ci_test_tasks:
+        if not task.get("actualStartDate"):
+            raise IncompleteTasksError(f"任务 {task['taskName']} 尚未填写实际开始日期")
+
+        actual_start_dates.append(
+            datetime.datetime.strptime(task["actualStartDate"], "%Y-%m-%d").date()
+        )
+
+    # Find the earliest actual start date.
+    earliest_actual_start_date = min(actual_start_dates)
 
     return PmProject(
         project_managers=get_role_members(raw_members, "项目经理"),
