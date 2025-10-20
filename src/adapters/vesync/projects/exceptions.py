@@ -31,3 +31,18 @@ class NoFreshUserError(HTTPException):
         )
 
     pass
+
+
+class OrganizationNotFoundError(HTTPException):
+    """Raised when the organization is not found in the database."""
+
+    def __init__(
+        self,
+        detail: str = "Organization information not found in the database. You may need to log into PM again.",
+    ):
+        super().__init__(
+            status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
+            detail=detail,
+        )
+
+    pass
