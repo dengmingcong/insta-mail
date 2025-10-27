@@ -129,3 +129,33 @@ def get_project_tasks_by_category(
     return jmespath.search(
         f"[?taskCategoryPath[?categoryName == '{category}']]", project_all_tasks
     )
+
+
+def get_project_tasks_by_category_and_owner(
+    all_organization_members: list[dict],
+    project_all_tasks: list[dict],
+    category: str,
+    owner_position: str,
+) -> list[dict]:
+    """Get tasks by category and owner position in the project.
+
+    :param all_organization_members: All members in the organization.
+    :param project_all_tasks: All tasks in the project.
+    :param category: Category to filter.
+    :param owner_position: Owner position to filter.
+    :return: Tasks of the category and owner position.
+    """
+    # Get members of the owner position in the organization.
+    position_members = get_organization_position_members(
+        all_organization_members, owner_position, is_username_only=True
+    )
+
+    # Get tasks of the category in the project.
+    category_tasks = get_project_tasks_by_category(project_all_tasks, category)
+
+    # Filter tasks by owner position members.
+    return [
+        task
+        for task in category_tasks
+        if task["taskOwner"]["userName"] in position_members
+    ]
