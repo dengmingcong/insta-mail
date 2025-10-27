@@ -1,7 +1,7 @@
 """Non-business logic functions, e.g. response normalization, data enrichment."""
 
 import datetime
-from typing import Generator, Union
+from typing import Any, Callable, Generator, Optional, Union
 
 import jmespath
 
@@ -164,18 +164,34 @@ def get_project_tasks_by_category_and_owner(
     ]
 
 
-def get_task_dates(
-    tasks: list[dict], date_field: str, is_ensure_has_value: bool = True
-) -> Generator[datetime.date, None, None]:
+def str_to_date(date_str: str) -> datetime.date:
+    """Convert string to date.
+
+    :param date_str: Date string.
+    :return: Date object.
+    """
+    return datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+
+
+def get_task_filed_values(
+    tasks: list[dict],
+    field_name: str,
+    is_ensure_has_value: bool = True,
+    formatter: Optional[Callable] = None,
+) -> Generator[Any, None, None]:
     """Get dates from tasks by date field.
 
     :param tasks: List of tasks.
-    :param date_field: Date field to extract.
+    :param field_name: Whose value to get.
     :param is_ensure_has_value: Whether to ensure the field has value.
+    :param formatter: Optional formatter to format the values.
     :return: List of dates.
     """
     for task in tasks:
-        if is_ensure_has_value and not task.get(date_field):
-            raise IncompleteTasksError(f"任务 {task['taskName']} 尚未填写 {date_field}")
+        if is_ensure_has_value and not task.get(field_name):
+            raise IncompleteTasksError(f"任务 {task['taskName']} 尚未填写 {field_name}")
 
-        yield datetime.datetime.strptime(task[date_field], "%Y-%m-%d").date()
+        if formatter:
+            yield formatter(task[field_name])
+        else:
+            yield task[field_name]

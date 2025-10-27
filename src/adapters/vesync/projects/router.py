@@ -27,7 +27,8 @@ from src.adapters.vesync.projects.models import (
 from src.adapters.vesync.projects.utils import (
     get_project_position_members,
     get_project_tasks_by_category_and_owner,
-    get_task_dates,
+    get_task_filed_values,
+    str_to_date,
 )
 from src.database import SessionDep
 
@@ -172,10 +173,18 @@ async def read_project(
         raise NoTasksAssignedToApiTesterFoundError()
 
     # Calculate project timeline based on CI test tasks.
-    earliest_plan_start_date = min(get_task_dates(ci_test_tasks, "planStartDate"))
-    earliest_actual_start_date = min(get_task_dates(ci_test_tasks, "actualStartDate"))
-    latest_plan_end_date = max(get_task_dates(ci_test_tasks, "planEndDate"))
-    latest_actual_end_date = max(get_task_dates(ci_test_tasks, "actualEndDate"))
+    earliest_plan_start_date = min(
+        get_task_filed_values(ci_test_tasks, "planStartDate", formatter=str_to_date)
+    )
+    earliest_actual_start_date = min(
+        get_task_filed_values(ci_test_tasks, "actualStartDate", formatter=str_to_date)
+    )
+    latest_plan_end_date = max(
+        get_task_filed_values(ci_test_tasks, "planEndDate", formatter=str_to_date)
+    )
+    latest_actual_end_date = max(
+        get_task_filed_values(ci_test_tasks, "actualEndDate", formatter=str_to_date)
+    )
 
     return PmProject(
         project_managers=get_project_position_members(raw_members, "项目经理"),
