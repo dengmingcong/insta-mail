@@ -172,23 +172,48 @@ async def read_project(
     if not ci_test_tasks:
         raise NoTasksAssignedToApiTesterFoundError()
 
-    # Calculate project timeline based on CI test tasks.
-    earliest_plan_start_date = min(
-        get_task_filed_values(ci_test_tasks, "planStartDate", formatter=str_to_date)
+    # Calculate based on CI test tasks.
+    api_tester_summary = {
+        "ci_test": {
+            "earliest_plan_start_date": min(
+                get_task_filed_values(
+                    ci_test_tasks, "planStartDate", formatter=str_to_date
+                )
+            ),
+            "earliest_actual_start_date": min(
+                get_task_filed_values(
+                    ci_test_tasks, "actualStartDate", formatter=str_to_date
+                )
+            ),
+            "latest_plan_end_date": max(
+                get_task_filed_values(
+                    ci_test_tasks, "planEndDate", formatter=str_to_date
+                )
+            ),
+            "latest_actual_end_date": max(
+                get_task_filed_values(
+                    ci_test_tasks, "actualEndDate", formatter=str_to_date
+                )
+            ),
+            "plan_work_hours": sum(
+                get_task_filed_values(ci_test_tasks, "planWorkHour")
+            ),
+            "actual_work_hours": sum(
+                get_task_filed_values(ci_test_tasks, "actualWorkHour")
+            ),
+        }
+    }
+
+    # Calculate total work hours for '云测试'.
+    script_tasks: list[dict] = get_project_tasks_by_category_and_owner(
+        org.users, all_tasks, "云测试脚本和用例编写", "云测试"
     )
-    earliest_actual_start_date = min(
-        get_task_filed_values(ci_test_tasks, "actualStartDate", formatter=str_to_date)
-    )
-    latest_plan_end_date = max(
-        get_task_filed_values(ci_test_tasks, "planEndDate", formatter=str_to_date)
-    )
-    latest_actual_end_date = max(
-        get_task_filed_values(ci_test_tasks, "actualEndDate", formatter=str_to_date)
-    )
-    total_plan_work_hours = sum(get_task_filed_values(ci_test_tasks, "planWorkHour"))
-    total_actual_work_hours = sum(
-        get_task_filed_values(ci_test_tasks, "actualWorkHour")
-    )
+    api_tester_summary["total"] = {
+        "plan_work_hours": sum(get_task_filed_values(script_tasks, "planWorkHour"))
+        + api_tester_summary["ci_test"]["plan_work_hours"],
+        "actual_work_hours": sum(get_task_filed_values(script_tasks, "actualWorkHour"))
+        + api_tester_summary["ci_test"]["actual_work_hours"],
+    }
 
     return PmProject(
         project_managers=get_project_position_members(raw_members, "项目经理"),
