@@ -1,8 +1,11 @@
 """Non-business logic functions, e.g. response normalization, data enrichment."""
 
-from typing import Union
+import datetime
+from typing import Generator, Union
 
 import jmespath
+
+from src.adapters.vesync.projects.exceptions import IncompleteTasksError
 
 
 def get_project_position_members(
@@ -159,3 +162,20 @@ def get_project_tasks_by_category_and_owner(
         for task in category_tasks
         if task["taskOwner"]["userName"] in position_members
     ]
+
+
+def get_task_dates(
+    tasks: list[dict], date_field: str, is_ensure_has_value: bool = True
+) -> Generator[datetime.date, None, None]:
+    """Get dates from tasks by date field.
+
+    :param tasks: List of tasks.
+    :param date_field: Date field to extract.
+    :param is_ensure_has_value: Whether to ensure the field has value.
+    :return: List of dates.
+    """
+    for task in tasks:
+        if is_ensure_has_value and not task.get(date_field):
+            raise IncompleteTasksError(f"任务 {task['taskName']} 尚未填写 {date_field}")
+
+        yield datetime.datetime.strptime(task[date_field], "%Y-%m-%d").date()
