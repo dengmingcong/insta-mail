@@ -215,6 +215,24 @@ async def read_project(
         + api_tester_summary["ci_test"]["actual_work_hours"],
     }
 
+    # Calculate work hours for '云开发'.
+    cloud_developer_design_tasks: list[dict] = get_project_tasks_by_category_and_owner(
+        org.users, all_tasks, "云开发方案设计", "云开发"
+    )
+    cloud_developer_api_dev_tasks: list[dict] = get_project_tasks_by_category_and_owner(
+        org.users, all_tasks, "云接口开发", "云开发"
+    )
+    cloud_developer_summary = {
+        "plan_work_hours": sum(
+            get_task_filed_values(cloud_developer_design_tasks, "planWorkHour")
+        )
+        + sum(get_task_filed_values(cloud_developer_api_dev_tasks, "planWorkHour")),
+        "actual_work_hours": sum(
+            get_task_filed_values(cloud_developer_design_tasks, "actualWorkHour")
+        )
+        + sum(get_task_filed_values(cloud_developer_api_dev_tasks, "actualWorkHour")),
+    }
+
     return PmProject(
         project_managers=get_project_position_members(raw_members, "项目经理"),
         api_testers=get_project_position_members(raw_members, "云测试"),
