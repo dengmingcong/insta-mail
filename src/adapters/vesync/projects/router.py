@@ -26,9 +26,8 @@ from src.adapters.vesync.projects.models import (
     UserPasswordAuthNeedOtpResult,
 )
 from src.adapters.vesync.projects.utils import (
-    get_organization_position_members,
     get_project_position_members,
-    get_project_tasks_by_category,
+    get_project_tasks_by_category_and_owner,
 )
 from src.database import SessionDep
 
@@ -124,6 +123,7 @@ async def read_project(
     :param project_id: Project ID.
     :param fresh_pm_user: The user with a fresh token.
     """
+    # Call PM API to get project members.
     response = requests.post(
         project_constants.PM_API_ORIGIN + project_constants.API_GET_PROJECT_MEMBERS,
         json={
@@ -140,7 +140,7 @@ async def read_project(
 
     raw_members = response.json()["result"]["postMemberList"]
 
-    # Search for organization 'vesync'.
+    # Search for organization 'vesync' in the database.
     org = session.exec(
         select(Organization).where(Organization.name == "vesync")
     ).first()
@@ -149,12 +149,8 @@ async def read_project(
     if not org:
         raise OrganizationNotFoundError()
 
-    # Get all members whose position is '云测试'.
-    all_api_testers = get_organization_position_members(
-        org.users, "云测试", is_username_only=True
-    )
-
-    response = requests.post(
+    # Call PM API to get project tasks.
+    all_tasks: list[dict] = requests.post(
         project_constants.PM_API_ORIGIN + project_constants.API_GET_PROJECT_TASKS,
         json={
             "context": {
@@ -166,20 +162,11 @@ async def read_project(
             },
             "data": {"projectId": project_id},
         },
+    ).json()["result"]["taskList"]
+
+    ci_test_tasks: list[dict] = get_project_tasks_by_category_and_owner(
+        org.users, all_tasks, "云CI测试", "云测试"
     )
-
-    # Get all tasks.
-    all_tasks: list[dict] = response.json()["result"]["taskList"]
-
-    # Get tasks whose category is '云CI测试'.
-    ci_test_tasks: list[dict] = get_project_tasks_by_category(all_tasks, "云CI测试")
-
-    # Filter again to keep only tasks owned by '云测试' members.
-    ci_test_tasks = [
-        task
-        for task in ci_test_tasks
-        if task["taskOwner"]["userName"] in all_api_testers
-    ]
 
     if not ci_test_tasks:
         raise NoTasksAssignedToApiTesterFoundError()
