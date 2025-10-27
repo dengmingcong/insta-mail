@@ -11,7 +11,6 @@ from src.adapters.vesync.projects import constants as project_constants
 from src.adapters.vesync.projects import service as project_service
 from src.adapters.vesync.projects.dependencies import get_fresh_user
 from src.adapters.vesync.projects.exceptions import (
-    IncompleteTasksError,
     NoTasksAssignedToApiTesterFoundError,
     OrganizationNotFoundError,
 )
@@ -28,6 +27,7 @@ from src.adapters.vesync.projects.models import (
 from src.adapters.vesync.projects.utils import (
     get_project_position_members,
     get_project_tasks_by_category_and_owner,
+    get_task_dates,
 )
 from src.database import SessionDep
 
@@ -171,55 +171,11 @@ async def read_project(
     if not ci_test_tasks:
         raise NoTasksAssignedToApiTesterFoundError()
 
-    plan_start_dates: list[datetime.date] = []
-
-    for task in ci_test_tasks:
-        if not task.get("planStartDate"):
-            raise IncompleteTasksError(f"任务 {task['taskName']} 尚未填写计划开始日期")
-
-        plan_start_dates.append(
-            datetime.datetime.strptime(task["planStartDate"], "%Y-%m-%d").date()
-        )
-
-    # Find the earliest start date.
-    earliest_plan_start_date = min(plan_start_dates)
-
-    actual_start_dates: list[datetime.date] = []
-
-    for task in ci_test_tasks:
-        if not task.get("actualStartDate"):
-            raise IncompleteTasksError(f"任务 {task['taskName']} 尚未填写实际开始日期")
-
-        actual_start_dates.append(
-            datetime.datetime.strptime(task["actualStartDate"], "%Y-%m-%d").date()
-        )
-
-    # Find the earliest actual start date.
-    earliest_actual_start_date = min(actual_start_dates)
-
-    plan_end_dates: list[datetime.date] = []
-    for task in ci_test_tasks:
-        if not task.get("planEndDate"):
-            raise IncompleteTasksError(f"任务 {task['taskName']} 尚未填写计划结束日期")
-
-        plan_end_dates.append(
-            datetime.datetime.strptime(task["planEndDate"], "%Y-%m-%d").date()
-        )
-
-    # Find the latest plan end date.
-    latest_plan_end_date = max(plan_end_dates)
-
-    actual_end_dates: list[datetime.date] = []
-    for task in ci_test_tasks:
-        if not task.get("actualEndDate"):
-            raise IncompleteTasksError(f"任务 {task['taskName']} 尚未填写实际结束日期")
-
-        actual_end_dates.append(
-            datetime.datetime.strptime(task["actualEndDate"], "%Y-%m-%d").date()
-        )
-
-    # Find the latest actual end date.
-    latest_actual_end_date = max(actual_end_dates)
+    # Calculate project timeline based on CI test tasks.
+    earliest_plan_start_date = min(get_task_dates(ci_test_tasks, "planStartDate"))
+    earliest_actual_start_date = min(get_task_dates(ci_test_tasks, "actualStartDate"))
+    latest_plan_end_date = max(get_task_dates(ci_test_tasks, "planEndDate"))
+    latest_actual_end_date = max(get_task_dates(ci_test_tasks, "actualEndDate"))
 
     return PmProject(
         project_managers=get_project_position_members(raw_members, "项目经理"),
