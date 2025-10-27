@@ -185,6 +185,10 @@ async def read_project(
     latest_actual_end_date = max(
         get_task_filed_values(ci_test_tasks, "actualEndDate", formatter=str_to_date)
     )
+    total_plan_work_hours = sum(get_task_filed_values(ci_test_tasks, "planWorkHour"))
+    total_actual_work_hours = sum(
+        get_task_filed_values(ci_test_tasks, "actualWorkHour")
+    )
 
     return PmProject(
         project_managers=get_project_position_members(raw_members, "项目经理"),
