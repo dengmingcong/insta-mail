@@ -243,13 +243,29 @@ async def read_project(
     )
     cloud_developer_summary = CloudDeveloperSummary(
         total_plan_work_hours=sum(
-            get_task_filed_values(cloud_developer_design_tasks, "planWorkHour")
+            get_task_filed_values(
+                cloud_developer_design_tasks, "planWorkHour", is_ensure_has_value=False
+            )
         )
-        + sum(get_task_filed_values(cloud_developer_api_dev_tasks, "planWorkHour")),
+        + sum(
+            get_task_filed_values(
+                cloud_developer_api_dev_tasks, "planWorkHour", is_ensure_has_value=False
+            )
+        ),
         total_actual_work_hours=sum(
-            get_task_filed_values(cloud_developer_design_tasks, "actualWorkHour")
+            get_task_filed_values(
+                cloud_developer_design_tasks,
+                "actualWorkHour",
+                is_ensure_has_value=False,
+            )
         )
-        + sum(get_task_filed_values(cloud_developer_api_dev_tasks, "actualWorkHour")),
+        + sum(
+            get_task_filed_values(
+                cloud_developer_api_dev_tasks,
+                "actualWorkHour",
+                is_ensure_has_value=False,
+            )
+        ),
     )
 
     return PmProject(
