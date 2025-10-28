@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import field_validator
 from sqlmodel import JSON, Column, Field, SQLModel
@@ -82,8 +82,8 @@ class PmProjectPublic(SQLModel):
     title: str
 
 
-class PmProject(SQLModel):
-    """Pydantic model for PM project details."""
+class ProjectMembers(SQLModel):
+    """Project members information."""
 
     project_managers: list[str]
     api_testers: list[str]
@@ -91,6 +91,40 @@ class PmProject(SQLModel):
     web_developers: list[str]
     app_developers: list[str]
     ui_testers: list[str]
+
+
+class ProjectCiTestSummary(SQLModel):
+    """Project CI test statistics information."""
+
+    earliest_plan_start_date: date
+    earliest_actual_start_date: date
+    latest_plan_end_date: date
+    latest_actual_end_date: date
+    plan_work_hours: float
+    actual_work_hours: float
+
+
+class ApiTesterSummary(SQLModel):
+    """API tester statistics information."""
+
+    ci_test: ProjectCiTestSummary
+    total_plan_work_hours: float
+    total_actual_work_hours: float
+
+
+class CloudDeveloperSummary(SQLModel):
+    """Cloud developer statistics information."""
+
+    total_plan_work_hours: float
+    total_actual_work_hours: float
+
+
+class PmProject(SQLModel):
+    """Pydantic model for PM project details."""
+
+    members: ProjectMembers
+    api_tester_summary: ApiTesterSummary
+    cloud_developer_summary: CloudDeveloperSummary
 
 
 class Organization(SQLModel, table=True):
