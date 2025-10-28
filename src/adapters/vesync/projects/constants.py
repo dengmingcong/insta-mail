@@ -26,11 +26,17 @@ API_GET_PROJECT_TASKS: str = "/platform/admin/pmProject/v2/getRelatedProjectTask
 
 
 class LoginPageLocators:
-    USERNAME_INPUT: dict = {"role": "textbox", "name": "请输入邮箱前缀或邮箱地址"}
-    PASSWORD_INPUT: dict = {"role": "textbox", "name": "请输入密码"}
-    LOG_IN_BUTTON: dict = {"role": "button", "name": "登 录"}
-    OTP_INPUT: dict = {"role": "textbox", "name": "请输入6位验证码"}
-    OTP_BUTTON: dict = {"role": "button", "name": "验 证"}
+    USERNAME_INPUT: dict = {
+        "role": "textbox",
+        "name": "Please enter email prefix or email address",
+    }
+    PASSWORD_INPUT: dict = {"role": "textbox", "name": "Please enter password"}
+    LOG_IN_BUTTON: dict = {"role": "button", "name": "Log in"}
+    OTP_INPUT: dict = {
+        "role": "textbox",
+        "name": "Enter 6-digit code",
+    }
+    OTP_BUTTON: dict = {"role": "button", "name": "Verify"}
 
 
 class MainPageLocators:
