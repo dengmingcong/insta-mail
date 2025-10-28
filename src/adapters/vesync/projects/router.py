@@ -15,12 +15,16 @@ from src.adapters.vesync.projects.exceptions import (
     OrganizationNotFoundError,
 )
 from src.adapters.vesync.projects.models import (
+    ApiTesterSummary,
+    CloudDeveloperSummary,
     Organization,
     PmProject,
     PmProjectPublic,
     PmUser,
     PmUserCreate,
     PmUserPublic,
+    ProjectCiTestSummary,
+    ProjectMembers,
     UserOtp,
     UserPasswordAuthNeedOtpResult,
 )
@@ -172,48 +176,52 @@ async def read_project(
     if not ci_test_tasks:
         raise NoTasksAssignedToApiTesterFoundError()
 
-    # Calculate based on CI test tasks.
-    api_tester_summary = {
-        "ci_test": {
-            "earliest_plan_start_date": min(
-                get_task_filed_values(
-                    ci_test_tasks, "planStartDate", formatter=str_to_date
-                )
-            ),
-            "earliest_actual_start_date": min(
-                get_task_filed_values(
-                    ci_test_tasks, "actualStartDate", formatter=str_to_date
-                )
-            ),
-            "latest_plan_end_date": max(
-                get_task_filed_values(
-                    ci_test_tasks, "planEndDate", formatter=str_to_date
-                )
-            ),
-            "latest_actual_end_date": max(
-                get_task_filed_values(
-                    ci_test_tasks, "actualEndDate", formatter=str_to_date
-                )
-            ),
-            "plan_work_hours": sum(
-                get_task_filed_values(ci_test_tasks, "planWorkHour")
-            ),
-            "actual_work_hours": sum(
-                get_task_filed_values(ci_test_tasks, "actualWorkHour")
-            ),
-        }
-    }
-
     # Calculate total work hours for '云测试'.
     script_tasks: list[dict] = get_project_tasks_by_category_and_owner(
         org.users, all_tasks, "云测试脚本和用例编写", "云测试"
     )
-    api_tester_summary["total"] = {
-        "plan_work_hours": sum(get_task_filed_values(script_tasks, "planWorkHour"))
-        + api_tester_summary["ci_test"]["plan_work_hours"],
-        "actual_work_hours": sum(get_task_filed_values(script_tasks, "actualWorkHour"))
-        + api_tester_summary["ci_test"]["actual_work_hours"],
-    }
+
+    # Calculate based on CI test tasks.
+    api_tester_summary = ApiTesterSummary(
+        ci_test=ProjectCiTestSummary(
+            earliest_plan_start_date=min(
+                get_task_filed_values(
+                    ci_test_tasks, "planStartDate", formatter=str_to_date
+                )
+            ),
+            earliest_actual_start_date=min(
+                get_task_filed_values(
+                    ci_test_tasks, "actualStartDate", formatter=str_to_date
+                )
+            ),
+            latest_plan_end_date=max(
+                get_task_filed_values(
+                    ci_test_tasks, "planEndDate", formatter=str_to_date
+                )
+            ),
+            latest_actual_end_date=max(
+                get_task_filed_values(
+                    ci_test_tasks, "actualEndDate", formatter=str_to_date
+                )
+            ),
+            plan_work_hours=(
+                ci_test_plan := sum(
+                    get_task_filed_values(ci_test_tasks, "planWorkHour")
+                )
+            ),
+            actual_work_hours=(
+                ci_test_actual := sum(
+                    get_task_filed_values(ci_test_tasks, "actualWorkHour")
+                )
+            ),
+        ),
+        total_plan_work_hours=sum(get_task_filed_values(script_tasks, "planWorkHour"))
+        + ci_test_plan,
+        total_actual_work_hours=sum(
+            get_task_filed_values(script_tasks, "actualWorkHour")
+        )
+        + ci_test_actual,
+    )
 
     # Calculate work hours for '云开发'.
     cloud_developer_design_tasks: list[dict] = get_project_tasks_by_category_and_owner(
@@ -222,22 +230,26 @@ async def read_project(
     cloud_developer_api_dev_tasks: list[dict] = get_project_tasks_by_category_and_owner(
         org.users, all_tasks, "云接口开发", "云开发"
     )
-    cloud_developer_summary = {
-        "plan_work_hours": sum(
+    cloud_developer_summary = CloudDeveloperSummary(
+        total_plan_work_hours=sum(
             get_task_filed_values(cloud_developer_design_tasks, "planWorkHour")
         )
         + sum(get_task_filed_values(cloud_developer_api_dev_tasks, "planWorkHour")),
-        "actual_work_hours": sum(
+        total_actual_work_hours=sum(
             get_task_filed_values(cloud_developer_design_tasks, "actualWorkHour")
         )
         + sum(get_task_filed_values(cloud_developer_api_dev_tasks, "actualWorkHour")),
-    }
+    )
 
     return PmProject(
-        project_managers=get_project_position_members(raw_members, "项目经理"),
-        api_testers=get_project_position_members(raw_members, "云测试"),
-        cloud_developers=get_project_position_members(raw_members, "云开发"),
-        web_developers=get_project_position_members(raw_members, "web前端开发"),
-        app_developers=get_project_position_members(raw_members, "app开发"),
-        ui_testers=get_project_position_members(raw_members, "系统测试"),
+        members=ProjectMembers(
+            project_managers=get_project_position_members(raw_members, "项目经理"),
+            api_testers=get_project_position_members(raw_members, "云测试"),
+            cloud_developers=get_project_position_members(raw_members, "云开发"),
+            web_developers=get_project_position_members(raw_members, "web前端开发"),
+            app_developers=get_project_position_members(raw_members, "app开发"),
+            ui_testers=get_project_position_members(raw_members, "系统测试"),
+        ),
+        api_tester_summary=api_tester_summary,
+        cloud_developer_summary=cloud_developer_summary,
     )
