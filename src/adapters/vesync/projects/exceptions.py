@@ -76,3 +76,18 @@ class IncompleteTasksError(HTTPException):
         )
 
     pass
+
+
+class PmApiError(HTTPException):
+    """Raised when PM API returns an error."""
+
+    def __init__(
+        self,
+        detail: str = "调用 PM 接口时返回了错误",
+    ):
+        super().__init__(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=detail,
+        )
+
+    pass
