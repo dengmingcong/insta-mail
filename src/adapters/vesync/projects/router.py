@@ -161,7 +161,7 @@ async def read_project(
         json={
             "context": {
                 **project_constants.PM_API_CONTEXT,
-                "method": "getRelatedProjectTasks",
+                "method": "getRelatedProjectTask",
                 "accountID": fresh_pm_user.account_id,
                 "token": fresh_pm_user.access_token,
                 "traceId": int(datetime.datetime.now().timestamp()),
@@ -178,7 +178,7 @@ async def read_project(
             f"Error occurred when calling PM API {project_constants.API_GET_PROJECT_TASKS}: {response_json}"
         )
 
-    all_tasks: list[dict] = response_json()["result"]["taskList"]
+    all_tasks: list[dict] = response_json["result"]["taskList"]
 
     ci_test_tasks: list[dict] = get_project_tasks_by_category_and_owner(
         org.users, all_tasks, "云CI测试", "云测试"
