@@ -189,7 +189,9 @@ def get_task_filed_values(
     """
     for task in tasks:
         if is_ensure_has_value and not task.get(field_name):
-            raise IncompleteTasksError(f"任务 {task['taskName']} 尚未填写 {field_name}")
+            raise IncompleteTasksError(
+                f"任务 {task['taskName']} 尚未填写 {field_name}, task 详情: {task}"
+            )
 
         if formatter:
             yield formatter(task[field_name])
