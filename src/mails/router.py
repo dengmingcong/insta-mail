@@ -28,19 +28,21 @@ async def create_mail(
     fresh_pm_user: Annotated[PmUser, Depends(get_fresh_user)],
 ):
     """Create a mail."""
-    project: PmProject = await read_project(mail_create.project_id, fresh_pm_user)
+    project: PmProject = await read_project(
+        mail_create.project_id, fresh_pm_user, session
+    )
     mail_db: Mail = Mail(
         project_name=mail_create.project_name,
         conclusion=mail_create.conclusion,
         risk=mail_create.risk,
         suggestion=mail_create.suggestion,
         tools=mail_create.tools,
-        project_managers=project.project_managers,
-        api_testers=project.api_testers,
-        cloud_developers=project.cloud_developers,
-        web_developers=project.web_developers,
-        app_developers=project.app_developers,
-        ui_testers=project.ui_testers,
+        project_managers=project.members.project_managers,
+        api_testers=project.members.api_testers,
+        cloud_developers=project.members.cloud_developers,
+        web_developers=project.members.web_developers,
+        app_developers=project.members.app_developers,
+        ui_testers=project.members.ui_testers,
         apis=mail_create.apis,
     )
     session.add(mail_db)
