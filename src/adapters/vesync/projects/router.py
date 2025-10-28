@@ -13,6 +13,7 @@ from src.adapters.vesync.projects.dependencies import get_fresh_user
 from src.adapters.vesync.projects.exceptions import (
     NoTasksAssignedToApiTesterFoundError,
     OrganizationNotFoundError,
+    PmApiError,
 )
 from src.adapters.vesync.projects.models import (
     ApiTesterSummary,
@@ -155,7 +156,7 @@ async def read_project(
         raise OrganizationNotFoundError()
 
     # Call PM API to get project tasks.
-    all_tasks: list[dict] = requests.post(
+    response = requests.post(
         project_constants.PM_API_ORIGIN + project_constants.API_GET_PROJECT_TASKS,
         json={
             "context": {
@@ -167,7 +168,17 @@ async def read_project(
             },
             "data": {"projectId": project_id},
         },
-    ).json()["result"]["taskList"]
+    )
+
+    # Raise error if return code is not 0.
+    response_json = response.json()
+
+    if response_json["code"] != 0:
+        raise PmApiError(
+            f"Error occurred when calling PM API {project_constants.API_GET_PROJECT_TASKS}: {response_json}"
+        )
+
+    all_tasks: list[dict] = response_json()["result"]["taskList"]
 
     ci_test_tasks: list[dict] = get_project_tasks_by_category_and_owner(
         org.users, all_tasks, "云CI测试", "云测试"
