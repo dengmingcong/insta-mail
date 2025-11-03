@@ -11,7 +11,7 @@ class MailBase(SQLModel):
 
     project_name: str
     conclusion: Optional[str] = None
-    wiki: Optional[str] = None
+    wiki: str
     risk: str
     suggestion: str
     tools: list[str] = Field(sa_column=Column(JSON))
