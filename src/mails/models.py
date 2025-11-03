@@ -42,6 +42,7 @@ class MailPublic(SQLModel):
     """The public data model for mail."""
 
     id: int
+    project_name: str
     created_at: datetime
     last_updated: datetime
 
