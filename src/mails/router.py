@@ -34,6 +34,7 @@ async def create_mail(
     mail_db: Mail = Mail(
         project_name=mail_create.project_name,
         conclusion=mail_create.conclusion,
+        wiki=mail_create.wiki,
         risk=mail_create.risk,
         suggestion=mail_create.suggestion,
         tools=mail_create.tools,
