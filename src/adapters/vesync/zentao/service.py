@@ -402,7 +402,7 @@ def gen_pie_chart(bugs: list[dict]) -> Optional[bytes]:
         sizes,
         labels=labels,
         autopct="%1.1f%%",
-        startangle=140,
+        counterclock=False,
         pctdistance=0.8,
         labeldistance=1.1,
     )
