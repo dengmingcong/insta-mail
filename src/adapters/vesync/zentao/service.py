@@ -12,7 +12,11 @@ from matplotlib import dates as mdates
 from matplotlib import ticker as mticker
 from requests import Session
 
-from src.adapters.vesync.zentao.exceptions import BugOpenedBeforeTestStartError
+from src.adapters.vesync.zentao.constants import RESOLUTION_MAP
+from src.adapters.vesync.zentao.exceptions import (
+    BugOpenedBeforeTestStartError,
+    UnrecognizedBugResolutionError,
+)
 from src.adapters.vesync.zentao.utils import canonicalize_project_name
 
 
@@ -337,4 +341,63 @@ def gen_burndown_chart(
 
     # Save the figure.
     plt.savefig("burndown_chart.png")
+    plt.close()
+
+
+def gen_pie_chart(bugs: list[dict]) -> Optional[bytes]:
+    """Generate a pie chart for bug resolution types.
+
+    :param bugs: A list of bugs read from zentao.
+    :return: The PNG image bytes of the generated pie chart.
+    """
+    if not bugs:
+        return
+
+    # Count bugs by resolution.
+    resolution_counts: dict[str, int] = defaultdict(int)
+    for bug in bugs:
+        # Empty or missing resolution means unresolved.
+        resolution = bug.get("resolution") or "UNRESOLVED"
+        resolution_counts[resolution] += 1
+
+    # Prepare labels and sizes.
+    # Map English resolution to Chinese when possible, fallback to raw value.
+    labels: list[str] = []
+    sizes: list[int] = []
+
+    # Sort by count desc to make the pie chart more readable.
+    for resolution, count in sorted(
+        resolution_counts.items(), key=lambda kv: kv[1], reverse=True
+    ):
+        if resolution == "UNRESOLVED":
+            display = "未解决"
+        else:
+            display = RESOLUTION_MAP.get(resolution)
+
+            # Raise error if resolution is unrecognized.
+            if not display:
+                raise UnrecognizedBugResolutionError(
+                    status_code=500,
+                    detail=f"Bug has unrecognized resolution: {resolution}",
+                )
+
+        labels.append(f"{display} ({count})")
+        sizes.append(count)
+
+    # Draw pie chart.
+    DPI = 100
+    _, ax = plt.subplots(figsize=(800 / DPI, 600 / DPI), dpi=DPI)
+    ax.pie(
+        sizes,
+        labels=labels,
+        autopct="%1.1f%%",
+        startangle=140,
+        pctdistance=0.8,
+        labeldistance=1.1,
+    )
+    ax.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
+    ax.set_title("Bug Resolution Distribution")
+
+    plt.tight_layout()
+    plt.savefig("pie_chart.png")
     plt.close()
