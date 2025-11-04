@@ -353,6 +353,17 @@ def gen_pie_chart(bugs: list[dict]) -> Optional[bytes]:
     if not bugs:
         return
 
+    # Configure matplotlib to support Chinese characters.
+    plt.rcParams["font.sans-serif"] = [
+        "Arial Unicode MS",
+        "PingFang SC",
+        "Hiragino Sans GB",
+        "Microsoft YaHei",
+        "SimHei",
+        "DejaVu Sans",
+    ]
+    plt.rcParams["axes.unicode_minus"] = False  # Fix minus sign display.
+
     # Count bugs by resolution.
     resolution_counts: dict[str, int] = defaultdict(int)
     for bug in bugs:
