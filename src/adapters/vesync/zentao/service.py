@@ -425,8 +425,12 @@ def gen_pie_chart(bugs: list[dict]) -> Optional[bytes]:
         textprops={"fontsize": 9},  # Slightly smaller text for cleaner look
     )
     ax.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
-    ax.set_title("Bug Resolution Distribution")
+    ax.set_title(
+        "Bug Resolution Distribution", pad=20, fontsize=12
+    )  # Add padding between title and chart.
 
     plt.tight_layout()
-    plt.savefig("pie_chart.png")
+    plt.savefig(
+        "pie_chart.png", bbox_inches="tight", pad_inches=0.3
+    )  # Add extra padding around the figure.
     plt.close()
