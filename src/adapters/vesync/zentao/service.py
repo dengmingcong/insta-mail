@@ -344,10 +344,12 @@ def gen_burndown_chart(
     plt.close()
 
 
-def gen_pie_chart(bugs: list[dict]) -> Optional[bytes]:
+def gen_pie_chart(bugs: list[dict], color_scheme: str = "pastel") -> Optional[bytes]:
     """Generate a pie chart for bug resolution types.
 
     :param bugs: A list of bugs read from zentao.
+    :param color_scheme: Color scheme to use. Options: "pastel" (default) for multi-color palette,
+                         "monochrome" for single-color gradient (blue shades).
     :return: The PNG image bytes of the generated pie chart.
     """
     if not bugs:
@@ -395,22 +397,39 @@ def gen_pie_chart(bugs: list[dict]) -> Optional[bytes]:
         labels.append(f"{display} ({count})")
         sizes.append(count)
 
-    # Draw pie chart with pastel colors (soft and fresh style).
-    # Use a soft, pastel color palette for a clean and fresh look.
-    pastel_colors = [
-        "#B4E7CE",  # Soft mint green
-        "#FFE5D4",  # Soft peach
-        "#D4E7FF",  # Soft sky blue
-        "#FFD4E5",  # Soft pink
-        "#E5D4FF",  # Soft lavender
-        "#FFFACD",  # Soft lemon
-        "#D4FFE5",  # Soft seafoam
-        "#FFE5CC",  # Soft apricot
-        "#E5F4FF",  # Soft powder blue
-        "#F4E5FF",  # Soft orchid
-        "#E5FFD4",  # Soft lime
-        "#FFD4D4",  # Soft coral
-    ]
+    # Select color palette based on color_scheme parameter.
+    if color_scheme == "monochrome":
+        # Monochromatic blue palette (different shades of the same color).
+        colors = [
+            "#E3F2FD",  # Very light blue
+            "#BBDEFB",  # Light blue
+            "#90CAF9",  # Light-medium blue
+            "#64B5F6",  # Medium blue
+            "#42A5F5",  # Medium-dark blue
+            "#2196F3",  # Standard blue
+            "#1E88E5",  # Dark blue
+            "#1976D2",  # Darker blue
+            "#1565C0",  # Very dark blue
+            "#0D47A1",  # Deepest blue
+            "#82B1FF",  # Accent light blue
+            "#448AFF",  # Accent blue
+        ]
+    else:  # Default to "pastel"
+        # Soft, pastel color palette for a clean and fresh look.
+        colors = [
+            "#B4E7CE",  # Soft mint green
+            "#FFE5D4",  # Soft peach
+            "#D4E7FF",  # Soft sky blue
+            "#FFD4E5",  # Soft pink
+            "#E5D4FF",  # Soft lavender
+            "#FFFACD",  # Soft lemon
+            "#D4FFE5",  # Soft seafoam
+            "#FFE5CC",  # Soft apricot
+            "#E5F4FF",  # Soft powder blue
+            "#F4E5FF",  # Soft orchid
+            "#E5FFD4",  # Soft lime
+            "#FFD4D4",  # Soft coral
+        ]
 
     DPI = 100
     _, ax = plt.subplots(figsize=(800 / DPI, 600 / DPI), dpi=DPI)
@@ -418,7 +437,7 @@ def gen_pie_chart(bugs: list[dict]) -> Optional[bytes]:
         sizes,
         labels=labels,
         autopct="%1.1f%%",
-        colors=pastel_colors[: len(sizes)],  # Use only as many colors as needed
+        colors=colors[: len(sizes)],  # Use only as many colors as needed
         counterclock=False,
         pctdistance=0.8,
         labeldistance=1.1,
