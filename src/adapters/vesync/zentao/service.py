@@ -395,16 +395,34 @@ def gen_pie_chart(bugs: list[dict]) -> Optional[bytes]:
         labels.append(f"{display} ({count})")
         sizes.append(count)
 
-    # Draw pie chart.
+    # Draw pie chart with pastel colors (soft and fresh style).
+    # Use a soft, pastel color palette for a clean and fresh look.
+    pastel_colors = [
+        "#B4E7CE",  # Soft mint green
+        "#FFE5D4",  # Soft peach
+        "#D4E7FF",  # Soft sky blue
+        "#FFD4E5",  # Soft pink
+        "#E5D4FF",  # Soft lavender
+        "#FFFACD",  # Soft lemon
+        "#D4FFE5",  # Soft seafoam
+        "#FFE5CC",  # Soft apricot
+        "#E5F4FF",  # Soft powder blue
+        "#F4E5FF",  # Soft orchid
+        "#E5FFD4",  # Soft lime
+        "#FFD4D4",  # Soft coral
+    ]
+
     DPI = 100
     _, ax = plt.subplots(figsize=(800 / DPI, 600 / DPI), dpi=DPI)
     ax.pie(
         sizes,
         labels=labels,
         autopct="%1.1f%%",
+        colors=pastel_colors[: len(sizes)],  # Use only as many colors as needed
         counterclock=False,
         pctdistance=0.8,
         labeldistance=1.1,
+        textprops={"fontsize": 9},  # Slightly smaller text for cleaner look
     )
     ax.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
     ax.set_title("Bug Resolution Distribution")
